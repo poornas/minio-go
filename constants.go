@@ -49,8 +49,14 @@ const maxMultipartPutObjectSize = 1024 * 1024 * 1024 * 1024 * 5
 // we don't want to sign the request payload
 const unsignedPayload = "UNSIGNED-PAYLOAD"
 
-// Total number of parallel workers used for multipart operation.
-var totalWorkers = 3
+// MinMultipartThreads is the minimum number of parallel workers allowed for multipart operation.
+const MinMultipartThreads = 3
+
+// MaxMultipartThreads is the maximum number of parallel workers allowed for multipart operation.
+const MaxMultipartThreads = 10
+
+// DefaultMultipartThreads is the total number of default parallel workers used for multipart operation.
+var DefaultMultipartThreads = MinMultipartThreads
 
 // Signature related constants.
 const (
