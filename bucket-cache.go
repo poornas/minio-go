@@ -18,6 +18,7 @@
 package minio
 
 import (
+	"net"
 	"net/http"
 	"net/url"
 	"path"
@@ -94,12 +95,19 @@ func (c Client) getBucketLocation(bucketName string) (string, error) {
 		return location, nil
 	}
 
+	location, err := c.doGetBucketLocation(bucketName, VirtualHostedStyle)
+	if err != nil {
+		location, err = c.doGetBucketLocation(bucketName, PathStyle)
+	}
+	c.bucketLocCache.Set(bucketName, location)
+	return location, nil
+}
+func (c *Client) doGetBucketLocation(bucketName string, style urlStyle) (bucketLocation string, err error) {
 	// Initialize a new request.
-	req, err := c.getBucketLocationRequest(bucketName)
+	req, err := c.getBucketLocationRequest(bucketName, style)
 	if err != nil {
 		return "", err
 	}
-
 	// Initiate the request.
 	resp, err := c.do(req)
 	defer closeResponse(resp)
@@ -110,7 +118,10 @@ func (c Client) getBucketLocation(bucketName string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	c.bucketLocCache.Set(bucketName, location)
+	c.urlStyle = style
+	if style == VirtualHostedStyle && c.overrideSignerType.IsAnonymous() {
+		c.urlStyle = UnknownStyle
+	}
 	return location, nil
 }
 
@@ -155,14 +166,35 @@ func processBucketLocationResponse(resp *http.Response, bucketName string) (buck
 }
 
 // getBucketLocationRequest - Wrapper creates a new getBucketLocation request.
-func (c Client) getBucketLocationRequest(bucketName string) (*http.Request, error) {
+func (c Client) getBucketLocationRequest(bucketName string, style urlStyle) (*http.Request, error) {
+	var targetURL url.URL
+	if style == PathStyle {
+		// Set get bucket location always as path style.
+		targetURL := c.endpointURL
+		targetURL.Path = path.Join(bucketName, "") + "/"
+	} else {
+		host := c.endpointURL.Host
+		scheme := c.endpointURL.Scheme
+		// Strip port 80 and 443 so we won't send these ports in Host header.
+		if h, p, err := net.SplitHostPort(host); err == nil {
+			if scheme == "http" && p == "80" || scheme == "https" && p == "443" {
+				host = h
+			}
+		}
+		// Construct virtual hosted style url
+		urlStr := scheme + "://" + bucketName + "." + host + "/"
+		// Set location query.
+		urlValues := make(url.Values)
+		urlValues.Set("location", "")
+		u, err := url.Parse(urlStr)
+		if err != nil {
+			return nil, err
+		}
+		targetURL = *u
+	}
 	// Set location query.
 	urlValues := make(url.Values)
 	urlValues.Set("location", "")
-
-	// Set get bucket location always as path style.
-	targetURL := c.endpointURL
-	targetURL.Path = path.Join(bucketName, "") + "/"
 	targetURL.RawQuery = urlValues.Encode()
 
 	// Get a new HTTP request for the method.

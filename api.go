@@ -81,6 +81,9 @@ type Client struct {
 
 	// Random seed.
 	random *rand.Rand
+
+	// urlStyle accepted by the server.
+	urlStyle urlStyle
 }
 
 // Global constants.
@@ -98,11 +101,21 @@ const (
 	libraryUserAgent       = libraryUserAgentPrefix + libraryName + "/" + libraryVersion
 )
 
+// urlStyle is the url style known to be honored by the server
+type urlStyle int
+
+// Different types of request url styles.
+const (
+	UnknownStyle urlStyle = iota // signifies that URLType could not be conclusively determined, e.g. for anonymous calls
+	PathStyle
+	VirtualHostedStyle
+)
+
 // NewV2 - instantiate minio client with Amazon S3 signature version
 // '2' compatibility.
 func NewV2(endpoint string, accessKeyID, secretAccessKey string, secure bool) (*Client, error) {
 	creds := credentials.NewStaticV2(accessKeyID, secretAccessKey, "")
-	clnt, err := privateNew(endpoint, creds, secure, "")
+	clnt, err := privateNew(endpoint, creds, secure, "", UnknownStyle)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +127,7 @@ func NewV2(endpoint string, accessKeyID, secretAccessKey string, secure bool) (*
 // '4' compatibility.
 func NewV4(endpoint string, accessKeyID, secretAccessKey string, secure bool) (*Client, error) {
 	creds := credentials.NewStaticV4(accessKeyID, secretAccessKey, "")
-	clnt, err := privateNew(endpoint, creds, secure, "")
+	clnt, err := privateNew(endpoint, creds, secure, "", UnknownStyle)
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +138,7 @@ func NewV4(endpoint string, accessKeyID, secretAccessKey string, secure bool) (*
 // New - instantiate minio client, adds automatic verification of signature.
 func New(endpoint, accessKeyID, secretAccessKey string, secure bool) (*Client, error) {
 	creds := credentials.NewStaticV4(accessKeyID, secretAccessKey, "")
-	clnt, err := privateNew(endpoint, creds, secure, "")
+	clnt, err := privateNew(endpoint, creds, secure, "", UnknownStyle)
 	if err != nil {
 		return nil, err
 	}
@@ -144,7 +157,7 @@ func New(endpoint, accessKeyID, secretAccessKey string, secure bool) (*Client, e
 // for retrieving credentials from various credentials provider such as
 // IAM, File, Env etc.
 func NewWithCredentials(endpoint string, creds *credentials.Credentials, secure bool, region string) (*Client, error) {
-	return privateNew(endpoint, creds, secure, region)
+	return privateNew(endpoint, creds, secure, region, UnknownStyle)
 }
 
 // NewWithRegion - instantiate minio client, with region configured. Unlike New(),
@@ -152,7 +165,15 @@ func NewWithCredentials(endpoint string, creds *credentials.Credentials, secure 
 // Use this function when if your application deals with single region.
 func NewWithRegion(endpoint, accessKeyID, secretAccessKey string, secure bool, region string) (*Client, error) {
 	creds := credentials.NewStaticV4(accessKeyID, secretAccessKey, "")
-	return privateNew(endpoint, creds, secure, region)
+	return privateNew(endpoint, creds, secure, region, UnknownStyle)
+}
+
+// NewWithVirtual - instantiate minio client, with virtual hosted style configured. Use this function when your application
+// needs to use only virtual hosted style calls. Otherwise SDK tries to determine whether to use virtual or path style
+// requests automatically.
+func NewWithVirtual(endpoint, accessKeyID, secretAccessKey string, secure bool, region string) (*Client, error) {
+	creds := credentials.NewStaticV4(accessKeyID, secretAccessKey, "")
+	return privateNew(endpoint, creds, secure, region, VirtualHostedStyle)
 }
 
 // lockedRandSource provides protected rand source, implements rand.Source interface.
@@ -202,7 +223,7 @@ func getRegionFromURL(u url.URL) (region string) {
 	return region
 }
 
-func privateNew(endpoint string, creds *credentials.Credentials, secure bool, region string) (*Client, error) {
+func privateNew(endpoint string, creds *credentials.Credentials, secure bool, region string, style urlStyle) (*Client, error) {
 	// construct endpoint.
 	endpointURL, err := getEndpointURL(endpoint, secure)
 	if err != nil {
@@ -238,6 +259,8 @@ func privateNew(endpoint string, creds *credentials.Credentials, secure bool, re
 	// Introduce a new locked random seed.
 	clnt.random = rand.New(&lockedRandSource{src: rand.NewSource(time.Now().UTC().UnixNano())})
 
+	// Set url style known to be accepted by server
+	clnt.urlStyle = style
 	// Return.
 	return clnt, nil
 }
@@ -799,17 +822,18 @@ func (c Client) makeTargetURL(bucketName, objectName, bucketLocation string, que
 	// endpoint URL.
 	if bucketName != "" {
 		// Save if target url will have buckets which suppport virtual host.
-		isVirtualHostStyle := s3utils.IsVirtualHostSupported(c.endpointURL, bucketName)
-
+		isVirtual := c.isVirtualHostStyle(bucketName)
 		// If endpoint supports virtual host style use that always.
 		// Currently only S3 and Google Cloud Storage would support
 		// virtual host style.
-		if isVirtualHostStyle {
+		if isVirtual {
+			fmt.Println("using virtual style api calls....")
 			urlStr = scheme + "://" + bucketName + "." + host + "/"
 			if objectName != "" {
 				urlStr = urlStr + s3utils.EncodePath(objectName)
 			}
 		} else {
+			fmt.Println("using path style api calls....")
 			// If not fall back to using path style.
 			urlStr = urlStr + bucketName + "/"
 			if objectName != "" {
@@ -829,4 +853,18 @@ func (c Client) makeTargetURL(bucketName, objectName, bucketLocation string, que
 	}
 
 	return u, nil
+}
+
+// isVirtualHostStyle - returns true if server supports
+// virtual hosted-style urls
+func (c *Client) isVirtualHostStyle(bucketName string) bool {
+	if c.endpointURL == sentinelURL {
+		return false
+	}
+	// bucketName can be valid but '.' in the hostname will fail SSL
+	// certificate validation. So do not use host-style for such buckets.
+	if c.endpointURL.Scheme == "https" && strings.Contains(bucketName, ".") {
+		return false
+	}
+	return c.urlStyle == VirtualHostedStyle
 }
