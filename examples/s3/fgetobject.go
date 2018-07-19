@@ -20,7 +20,10 @@
 package main
 
 import (
+	"crypto/tls"
 	"log"
+	"net/http"
+	"os"
 
 	"github.com/minio/minio-go"
 )
@@ -34,12 +37,21 @@ func main() {
 
 	// New returns an Amazon S3 compatible client object. API compatibility (v2 or v4) is automatically
 	// determined based on the Endpoint value.
-	s3Client, err := minio.New("s3.amazonaws.com", "YOUR-ACCESSKEYID", "YOUR-SECRETACCESSKEY", true)
+	s3Client, err := minio.New("localhost:9000", "minio", "minio123", true)
+	tr := &http.Transport{
+		TLSClientConfig:    &tls.Config{InsecureSkipVerify: true},
+		DisableCompression: true,
+	}
+	s3Client.SetCustomTransport(tr)
+	s3Client.TraceOn(os.Stdout)
+	if err != nil {
+		log.Fatalln(err)
+	}
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	if err := s3Client.FGetObject("my-bucketname", "my-objectname", "my-filename.csv", minio.GetObjectOptions{}); err != nil {
+	if err := s3Client.FGetObject("test", "lsses32sses3", "/home/kris/Downloads/kpsse32sses3filename.zip", minio.GetObjectOptions{}); err != nil {
 		log.Fatalln(err)
 	}
 	log.Println("Successfully saved my-filename.csv")

@@ -21,9 +21,10 @@ package main
 
 import (
 	"log"
+	"time"
 
-	minio "github.com/minio/minio-go"
-	encrypt "github.com/minio/minio-go/pkg/encrypt"
+	"github.com/minio/minio-go"
+	"github.com/minio/minio-go/pkg/encrypt"
 )
 
 func main() {
@@ -35,7 +36,7 @@ func main() {
 
 	// New returns an Amazon S3 compatible client object. API compatibility (v2 or v4) is automatically
 	// determined based on the Endpoint value.
-	s3Client, err := minio.New("s3.amazonaws.com", "YOUR-ACCESSKEYID", "YOUR-SECRETACCESSKEY", true)
+	s3Client, err := minio.New("localhost:9000", "minio", "minio123", false)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -43,37 +44,33 @@ func main() {
 	// Enable trace.
 	// s3Client.TraceOn(os.Stderr)
 
-	// Prepare source decryption key (here we assume same key to
-	// decrypt all source objects.)
-	decKey := encrypt.NewSSEC([]byte{1, 2, 3}, "")
+	// Source object
+	src := minio.NewSourceInfo("test", "sses3encrypted-obj2", encrypt.NewSSE())
 
-	// Source objects to concatenate. We also specify decryption
-	// key for each
-	src1 := minio.NewSourceInfo("bucket1", "object1", &decKey)
-	src1.SetMatchETagCond("31624deb84149d2f8ef9c385918b653a")
+	// All following conditions are allowed and can be combined together.
 
-	src2 := minio.NewSourceInfo("bucket2", "object2", &decKey)
-	src2.SetMatchETagCond("f8ef9c385918b653a31624deb84149d2")
+	// Set modified condition, copy object modified since 2014 April.
+	src.SetModifiedSinceCond(time.Date(2014, time.April, 0, 0, 0, 0, 0, time.UTC))
 
-	src3 := minio.NewSourceInfo("bucket3", "object3", &decKey)
-	src3.SetMatchETagCond("5918b653a31624deb84149d2f8ef9c38")
+	// Set unmodified condition, copy object unmodified since 2014 April.
+	// src.SetUnmodifiedSinceCond(time.Date(2014, time.April, 0, 0, 0, 0, 0, time.UTC))
 
-	// Create slice of sources.
-	srcs := []minio.SourceInfo{src1, src2, src3}
+	// Set matching ETag condition, copy object which matches the following ETag.
+	// src.SetMatchETagCond("31624deb84149d2f8ef9c385918b653a")
 
-	// Prepare destination encryption key
-	encKey := encrypt.SSEInfo([]byte{8, 9, 0}, "")
-	encKey = encrypt.SSE()
-	// Create destination info
-	dst, err := minio.NewDestinationInfo("bucket", "object", &encKey, nil)
+	// Set matching ETag except condition, copy object which does not match the following ETag.
+	// src.SetMatchETagExceptCond("31624deb84149d2f8ef9c385918b653a")
+
+	// Destination object
+	dst, err := minio.NewDestinationInfo("test", "sses3-enc-copy", encrypt.NewSSE(), nil)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	err = s3Client.ComposeObject(dst, srcs)
+	// Initiate copy object.
+	err = s3Client.CopyObject(dst, src)
 	if err != nil {
 		log.Fatalln(err)
 	}
-
-	log.Println("Composed object successfully.")
+	log.Println("Copied source object /my-sourcebucketname/my-sourceobjectname to destination /my-bucketname/my-objectname Successfully.")
 }

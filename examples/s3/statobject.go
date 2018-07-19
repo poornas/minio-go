@@ -20,9 +20,14 @@
 package main
 
 import (
+	"crypto/tls"
+	"fmt"
 	"log"
+	"net/http"
+	"os"
 
 	"github.com/minio/minio-go"
+	"github.com/minio/minio-go/pkg/encrypt"
 )
 
 func main() {
@@ -34,13 +39,36 @@ func main() {
 
 	// New returns an Amazon S3 compatible client object. API compatibility (v2 or v4) is automatically
 	// determined based on the Endpoint value.
-	s3Client, err := minio.New("s3.amazonaws.com", "YOUR-ACCESSKEYID", "YOUR-SECRETACCESSKEY", true)
+	s3Client, err := minio.New("localhost:9000", "minio", "minio123", true)
+	tr := &http.Transport{
+		TLSClientConfig:    &tls.Config{InsecureSkipVerify: true},
+		DisableCompression: true,
+	}
+	s3Client.SetCustomTransport(tr)
+	s3Client.TraceOn(os.Stdout)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	stat, err := s3Client.StatObject("my-bucketname", "my-objectname", minio.StatObjectOptions{})
+	/*
+		// should fail
+		stat, err := s3Client.StatObject("test", "sses3encrypted-obj2", minio.StatObjectOptions{minio.GetObjectOptions{ServerSideEncryption: encrypt.NewSSE()}})
+		if err != nil {
+			fmt.Println("stat of sse-s3 enc object::", stat, err)
+
+		}
+		fmt.Println("stat:: ", stat)
+	*/
+	stat, err := s3Client.StatObject("test", "lssec2ssec", minio.StatObjectOptions{minio.GetObjectOptions{ServerSideEncryption: encrypt.DefaultPBKDF([]byte("peeeassword"), []byte("salt"))}})
 	if err != nil {
-		log.Fatalln(err)
+		fmt.Println("stat1 of sse-s3 enc object::", stat, err)
 	}
-	log.Println(stat)
+	fmt.Println("stat1:: ", stat)
+	/*
+		stat, err = s3Client.StatObject("test", "plain", minio.StatObjectOptions{})
+		if err != nil {
+			fmt.Println("stat2 of unencryted object::", stat, err)
+
+		}
+		log.Println("stat2 ::", stat)
+	*/
 }

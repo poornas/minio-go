@@ -20,8 +20,12 @@
 package main
 
 import (
+	"crypto/tls"
 	"log"
+	"net/http"
 	"os"
+
+	"github.com/minio/minio-go/pkg/encrypt"
 
 	"github.com/minio/minio-go"
 )
@@ -35,12 +39,20 @@ func main() {
 
 	// New returns an Amazon S3 compatible client object. API compatibility (v2 or v4) is automatically
 	// determined based on the Endpoint value.
-	s3Client, err := minio.New("s3.amazonaws.com", "YOUR-ACCESSKEYID", "YOUR-SECRETACCESSKEY", true)
+	s3Client, err := minio.New("localhost:9000", "minio", "minio123", false)
+
+	tr := &http.Transport{
+		TLSClientConfig:    &tls.Config{InsecureSkipVerify: true},
+		DisableCompression: true,
+	}
+	s3Client.SetCustomTransport(tr)
+	s3Client.TraceOn(os.Stdout)
 	if err != nil {
 		log.Fatalln(err)
 	}
-
-	object, err := os.Open("my-testfile")
+	//small object put
+	object, err := os.Open("/home/kris/Downloads/smallfile")
+	//object, err := os.Open("/home/kris/Downloads/wso2is-5.6.0.zip")
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -49,10 +61,42 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
+	//m := map[string]string{"X-Amz-Server-Side-Encryption": "AES256"}
+	n, err := s3Client.PutObject("test", "s3smallx3", object, objectStat.Size(), minio.PutObjectOptions{ContentType: "application/octet-stream", ServerSideEncryption: encrypt.NewSSE()})
 
-	n, err := s3Client.PutObject("my-bucketname", "my-objectname", object, objectStat.Size(), minio.PutObjectOptions{ContentType: "application/octet-stream"})
+	//n, err := s3Client.PutObject("tt1b", "s3enc-s1mall", object, objectStat.Size(), minio.PutObjectOptions{ContentType: "application/octet-stream", ServerSideEncryption: encrypt.NewSSE()})
 	if err != nil {
 		log.Fatalln(err)
 	}
 	log.Println("Uploaded", "my-objectname", " of size: ", n, "Successfully.")
 }
+
+/* large object put */
+//	object, err := os.Open("/home/kris/Downloads/smallfile")
+/*object, err := os.Open("/home/kris/Downloads/wso2is-5.6.0.zip")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer object.Close()
+	objectStat, err := object.Stat()
+	if err != nil {
+		log.Fatalln(err)
+	}
+	//m := map[string]string{"X-Amz-Server-Side-Encryption": "AES256"}
+	n, err := s3Client.PutObject("test", "lsses3", object, objectStat.Size(), minio.PutObjectOptions{ContentType: "application/octet-stream", ServerSideEncryption: encrypt.NewSSE()})
+	//n, err := s3Client.PutObject("test", "lssec", object, objectStat.Size(), minio.PutObjectOptions{ContentType: "application/octet-stream", ServerSideEncryption: encrypt.DefaultPBKDF([]byte("password"), []byte("salt"))})
+	//n, err := s3Client.PutObject("test", "lplain", object, objectStat.Size(), minio.PutObjectOptions{ContentType: "application/octet-stream"})
+	//n, err := s3Client.PutObject("test", "sses3", object, objectStat.Size(), minio.PutObjectOptions{ContentType: "application/octet-stream", ServerSideEncryption: encrypt.NewSSE()})
+
+	/* fake a sse-c and sse-s3 header at the same time
+	m := map[string]string{"X-Amz-Server-Side-Encryption": "AES256"}
+		n, err := s3Client.PutObject("test", "sses3", object, objectStat.Size(), minio.PutObjectOptions{ContentType: "application/octet-stream", ServerSideEncryption: encrypt.NewSSE()})
+	n, err := s3Client.PutObject("test", "ssecandsses3", object, objectStat.Size(), minio.PutObjectOptions{ContentType: "application/octet-stream", ServerSideEncryption: encrypt.DefaultPBKDF([]byte("password"), []byte("salt")), UserMetadata: m})
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+	log.Println("Uploaded", "my-objectname", " of size: ", n, "Successfully.")
+
+}
+*/

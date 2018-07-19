@@ -138,6 +138,8 @@ func NewSourceInfo(bucket, object string, sse encrypt.ServerSide) SourceInfo {
 
 	// Set the source header
 	r.Headers.Set("x-amz-copy-source", s3utils.EncodePath(bucket+"/"+object))
+	r.Headers.Set("X-Amz-Server-Side-Encryption", "AES256")
+
 	return r
 }
 
