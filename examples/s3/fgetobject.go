@@ -26,6 +26,7 @@ import (
 	"os"
 
 	"github.com/minio/minio-go"
+	"github.com/minio/minio-go/pkg/encrypt"
 )
 
 func main() {
@@ -37,7 +38,16 @@ func main() {
 
 	// New returns an Amazon S3 compatible client object. API compatibility (v2 or v4) is automatically
 	// determined based on the Endpoint value.
-	s3Client, err := minio.New("localhost:9000", "minio", "minio123", true)
+	accessKey := "minio"
+	if a, ok := os.LookupEnv("ACCESS_KEY"); ok {
+		accessKey = a
+	}
+	secretKey := "minio123"
+	if s, ok := os.LookupEnv("SECRET_KEY"); ok {
+		secretKey = s
+	}
+	s3Client, err := minio.New("localhost:9000", accessKey, secretKey, true)
+
 	tr := &http.Transport{
 		TLSClientConfig:    &tls.Config{InsecureSkipVerify: true},
 		DisableCompression: true,
@@ -50,8 +60,16 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
+	password := "correct horse battery staple" // Specify your password. DO NOT USE THIS ONE - USE YOUR OWN.
+	bucketname := "fudmod"
+	objectName := "osses3"
+	//m := map[string]string{"X-Amz-Server-Side-Encryption": "AES256"}
+	encryption := encrypt.DefaultPBKDF([]byte(password), []byte(bucketname+objectName))
+	//encryption := encrypt.DefaultPBKDF([]byte("password"), []byte("salt"))
+	//	encryption := encrypt.NewSSE()
+	if err := s3Client.FGetObject(bucketname, objectName, "/home/kris/Downloads/sses3d2scp.txt", minio.GetObjectOptions{ServerSideEncryption: encryption}); err != nil {
 
-	if err := s3Client.FGetObject("test", "lsses32sses3", "/home/kris/Downloads/kpsse32sses3filename.zip", minio.GetObjectOptions{}); err != nil {
+		//if err := s3Client.FGetObject(bucketname, objectName, "/home/kris/Downloads/osses1d2.txt", minio.GetObjectOptions{}); err != nil {
 		log.Fatalln(err)
 	}
 	log.Println("Successfully saved my-filename.csv")

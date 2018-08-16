@@ -19,6 +19,7 @@ package minio
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -104,9 +105,10 @@ func (c Client) fGetObjectWithContext(ctx context.Context, bucketName, objectNam
 	if err != nil {
 		return err
 	}
-
+	fmt.Println("st size:", st.Size(), " objectStat...", objectStat)
 	// Write to the part file.
-	if _, err = io.CopyN(filePart, objectReader, objectStat.Size); err != nil {
+	if n, err := io.CopyN(filePart, objectReader, objectStat.Size); err != nil {
+		fmt.Println("copy err......", err, " number of bytes writtern:::", n)
 		return err
 	}
 

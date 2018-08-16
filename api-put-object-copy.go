@@ -19,6 +19,7 @@ package minio
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -56,10 +57,11 @@ func (c Client) CopyObjectWithProgress(dst DestinationInfo, src SourceInfo, prog
 	if dst.encryption != nil {
 		dst.encryption.Marshal(header)
 	}
+	fmt.Println(":dsdsds")
 	for k, v := range dst.getUserMetaHeadersMap(true) {
 		header.Set(k, v)
 	}
-
+	fmt.Println("setting header....", header)
 	resp, err := c.executeMethod(context.Background(), "PUT", requestMetadata{
 		bucketName:   dst.bucket,
 		objectName:   dst.object,

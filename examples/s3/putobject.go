@@ -25,9 +25,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/minio/minio-go/pkg/encrypt"
-
 	"github.com/minio/minio-go"
+	"github.com/minio/minio-go/pkg/encrypt"
 )
 
 func main() {
@@ -39,7 +38,15 @@ func main() {
 
 	// New returns an Amazon S3 compatible client object. API compatibility (v2 or v4) is automatically
 	// determined based on the Endpoint value.
-	s3Client, err := minio.New("localhost:9000", "minio", "minio123", false)
+	accessKey := "minio"
+	if a, ok := os.LookupEnv("ACCESS_KEY"); ok {
+		accessKey = a
+	}
+	secretKey := "minio123"
+	if s, ok := os.LookupEnv("SECRET_KEY"); ok {
+		secretKey = s
+	}
+	s3Client, err := minio.New("localhost:9000", accessKey, secretKey, true)
 
 	tr := &http.Transport{
 		TLSClientConfig:    &tls.Config{InsecureSkipVerify: true},
@@ -52,7 +59,9 @@ func main() {
 	}
 	//small object put
 	object, err := os.Open("/home/kris/Downloads/smallfile")
-	//object, err := os.Open("/home/kris/Downloads/wso2is-5.6.0.zip")
+	//	object, err := os.Open("/home/kris/Downloads/dump/100-0.txt")
+	//object, err := os.Open("/home/kris/Downloads/dump/large6M.txt")
+
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -61,19 +70,30 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	//m := map[string]string{"X-Amz-Server-Side-Encryption": "AES256"}
-	n, err := s3Client.PutObject("test", "s3smallx3", object, objectStat.Size(), minio.PutObjectOptions{ContentType: "application/octet-stream", ServerSideEncryption: encrypt.NewSSE()})
+	password := "correct horse battery staple" // Specify your password. DO NOT USE THIS ONE - USE YOUR OWN.
+
+	bucketname := "fudmod"
+	objectName := "osses3"
+	// //m := map[string]string{"X-Amz-Server-Side-Encryption": "AES256"}
+	encryption := encrypt.DefaultPBKDF([]byte(password), []byte(bucketname+objectName))
+	// // sse-c
+	n, err := s3Client.PutObject(bucketname, objectName, object, objectStat.Size(), minio.PutObjectOptions{ContentType: "application/octet-stream", ServerSideEncryption: encryption})
+	// sse-s3
+	//n, err := s3Client.PutObject(bucketname, objectName, object, objectStat.Size(), minio.PutObjectOptions{ContentType: "application/octet-stream", ServerSideEncryption: encrypt.NewSSE()})
 
 	//n, err := s3Client.PutObject("tt1b", "s3enc-s1mall", object, objectStat.Size(), minio.PutObjectOptions{ContentType: "application/octet-stream", ServerSideEncryption: encrypt.NewSSE()})
+
+	//n, err := s3Client.PutObject("test", "sse2s3", object, objectStat.Size(), minio.PutObjectOptions{ContentType: "application/octet-stream", ServerSideEncryption: encrypt.NewSSE()})
+
 	if err != nil {
 		log.Fatalln(err)
 	}
 	log.Println("Uploaded", "my-objectname", " of size: ", n, "Successfully.")
-}
 
-/* large object put */
-//	object, err := os.Open("/home/kris/Downloads/smallfile")
-/*object, err := os.Open("/home/kris/Downloads/wso2is-5.6.0.zip")
+	/* large object put */
+	//	object, err := os.Open("/home/kris/Downloads/smallfile")
+	/*object, err := os.Open("/home/kris/Downloads/wso2is-5.6.0.zip")
+
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -82,11 +102,11 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
+	*/
 	//m := map[string]string{"X-Amz-Server-Side-Encryption": "AES256"}
-	n, err := s3Client.PutObject("test", "lsses3", object, objectStat.Size(), minio.PutObjectOptions{ContentType: "application/octet-stream", ServerSideEncryption: encrypt.NewSSE()})
+	// n, err := s3Client.PutObject("test", "lsses3", object, objectStat.Size(), minio.PutObjectOptions{ContentType: "application/octet-stream", ServerSideEncryption: encrypt.NewSSE()})
 	//n, err := s3Client.PutObject("test", "lssec", object, objectStat.Size(), minio.PutObjectOptions{ContentType: "application/octet-stream", ServerSideEncryption: encrypt.DefaultPBKDF([]byte("password"), []byte("salt"))})
 	//n, err := s3Client.PutObject("test", "lplain", object, objectStat.Size(), minio.PutObjectOptions{ContentType: "application/octet-stream"})
-	//n, err := s3Client.PutObject("test", "sses3", object, objectStat.Size(), minio.PutObjectOptions{ContentType: "application/octet-stream", ServerSideEncryption: encrypt.NewSSE()})
 
 	/* fake a sse-c and sse-s3 header at the same time
 	m := map[string]string{"X-Amz-Server-Side-Encryption": "AES256"}
@@ -97,6 +117,5 @@ func main() {
 		log.Fatalln(err)
 	}
 	log.Println("Uploaded", "my-objectname", " of size: ", n, "Successfully.")
-
+	*/
 }
-*/

@@ -1,0 +1,11 @@
+package main
+// test
+import (
+	"fmt"
+	"strconv"
+)
+
+func main() {
+	fmt.Println("Hello, playground")
+	fmt.Println(strconv.Itoa(42))
+}

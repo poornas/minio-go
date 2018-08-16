@@ -90,6 +90,7 @@ func (c Core) PutObject(bucket, object string, data io.Reader, size int64, md5Ba
 			m[k] = metadata[k]
 		}
 	}
+	opts.ServerSideEncryption = sse
 	opts.UserMetadata = m
 	opts.ServerSideEncryption = sse
 	return c.putObjectDo(context.Background(), bucket, object, data, md5Base64, sha256Hex, size, opts)

@@ -22,6 +22,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -5458,6 +5459,7 @@ func testEncryptedCopyObjectWrapper(c *minio.Client) {
 
 	// Generate a new random bucket name.
 	bucketName := randString(60, rand.NewSource(time.Now().UnixNano()), "minio-go-test-")
+	bucketName = "fudmod"
 	// Make a new bucket in 'us-east-1' (source bucket).
 	err := c.MakeBucket(bucketName, "us-east-1")
 	if err != nil {
@@ -5605,11 +5607,16 @@ func testEncryptedCopyObject() {
 		os.Getenv(secretKey),
 		mustParseBool(os.Getenv(enableHTTPS)),
 	)
+
 	if err != nil {
 		logError(testName, function, args, startTime, "", "Minio v2 client object creation failed", err)
 		return
 	}
-
+	tr := &http.Transport{
+		TLSClientConfig:    &tls.Config{InsecureSkipVerify: true},
+		DisableCompression: true,
+	}
+	c.SetCustomTransport(tr)
 	// c.TraceOn(os.Stderr)
 	testEncryptedCopyObjectWrapper(c)
 }
@@ -7601,66 +7608,67 @@ func main() {
 	tls := mustParseBool(os.Getenv(enableHTTPS))
 	// execute tests
 	if isFullMode() {
-		testMakeBucketErrorV2()
-		testGetObjectClosedTwiceV2()
-		testFPutObjectV2()
-		testMakeBucketRegionsV2()
-		testGetObjectReadSeekFunctionalV2()
-		testGetObjectReadAtFunctionalV2()
-		testCopyObjectV2()
-		testFunctionalV2()
-		testComposeObjectErrorCasesV2()
-		testCompose10KSourcesV2()
-		testUserMetadataCopyingV2()
-		testPutObject0ByteV2()
-		testPutObjectNoLengthV2()
-		testPutObjectsUnknownV2()
-		testGetObjectWithContextV2()
-		testFPutObjectWithContextV2()
-		testFGetObjectWithContextV2()
-		testPutObjectWithContextV2()
-		testMakeBucketError()
-		testMakeBucketRegions()
-		testPutObjectWithMetadata()
-		testPutObjectReadAt()
-		testPutObjectStreaming()
-		testGetObjectSeekEnd()
-		testGetObjectClosedTwice()
-		testRemoveMultipleObjects()
-		testFPutObjectMultipart()
-		testFPutObject()
-		testGetObjectReadSeekFunctional()
-		testGetObjectReadAtFunctional()
-		testPresignedPostPolicy()
-		testCopyObject()
-		testComposeObjectErrorCases()
-		testCompose10KSources()
-		testUserMetadataCopying()
-		testBucketNotification()
-		testFunctional()
-		testGetObjectModified()
-		testPutObjectUploadSeekedObject()
-		testGetObjectWithContext()
-		testFPutObjectWithContext()
-		testFGetObjectWithContext()
-		testGetObjectACL()
-		testPutObjectWithContext()
-		testStorageClassMetadataPutObject()
-		testStorageClassInvalidMetadataPutObject()
-		testStorageClassMetadataCopyObject()
-		testPutObjectWithContentLanguage()
-		testListObjects()
-
+		/*		testMakeBucketErrorV2()
+				testGetObjectClosedTwiceV2()
+				testFPutObjectV2()
+				testMakeBucketRegionsV2()
+				testGetObjectReadSeekFunctionalV2()
+				testGetObjectReadAtFunctionalV2()
+				testCopyObjectV2()
+				testFunctionalV2()
+				testComposeObjectErrorCasesV2()
+				testCompose10KSourcesV2()
+				testUserMetadataCopyingV2()
+				testPutObject0ByteV2()
+				testPutObjectNoLengthV2()
+				testPutObjectsUnknownV2()
+				testGetObjectWithContextV2()
+				testFPutObjectWithContextV2()
+				testFGetObjectWithContextV2()
+				testPutObjectWithContextV2()
+				testMakeBucketError()
+				testMakeBucketRegions()
+				testPutObjectWithMetadata()
+				testPutObjectReadAt()
+				testPutObjectStreaming()
+				testGetObjectSeekEnd()
+				testGetObjectClosedTwice()
+				testRemoveMultipleObjects()
+				testFPutObjectMultipart()
+				testFPutObject()
+				testGetObjectReadSeekFunctional()
+				testGetObjectReadAtFunctional()
+				testPresignedPostPolicy()
+				testCopyObject()
+				testComposeObjectErrorCases()
+				testCompose10KSources()
+				testUserMetadataCopying()
+				testBucketNotification()
+				testFunctional()
+				testGetObjectModified()
+				testPutObjectUploadSeekedObject()
+				testGetObjectWithContext()
+				testFPutObjectWithContext()
+				testFGetObjectWithContext()
+				testPutObjectWithContext()
+				testStorageClassMetadataPutObject()
+				testStorageClassInvalidMetadataPutObject()
+				testStorageClassMetadataCopyObject()
+				testPutObjectWithContentLanguage()
+				testListObjects()
+		*/
 		// SSE-C tests will only work over TLS connection.
 		if tls {
-			testEncryptionPutGet()
-			testEncryptionFPut()
-			testEncryptedGetObjectReadAtFunctional()
-			testEncryptedGetObjectReadSeekFunctional()
-			testEncryptedCopyObjectV2()
+			/*			testEncryptionPutGet()
+									testEncryptionFPut()
+									testEncryptedGetObjectReadAtFunctional()
+									testEncryptedGetObjectReadSeekFunctional()
+
+						testEncryptedCopyObjectV2()
+			*/
 			testEncryptedCopyObject()
-			testEncryptedEmptyObject()
-			testDecryptedCopyObject()
+			// testEncryptedEmptyObject()
+			// testDecryptedCopyObject()
 		}
 	} else {
 		testFunctional()

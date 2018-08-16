@@ -24,13 +24,14 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/minio/minio-go"
 	"github.com/minio/minio-go/pkg/encrypt"
 )
 
 func main() {
-	// Note: YOUR-ACCESSKEYID, YOUR-SECRETACCESSKEY, my-testfile, my-bucketname and
+	// Note: YOUR-ACCESSKEYID, YOUR-SECRETACCESSKEY, my-fudmodfile, my-bucketname and
 	// my-objectname are dummy values, please replace them with original values.
 
 	// Requests are always secure (HTTPS) by default. Set secure=false to enable insecure (HTTP) access.
@@ -38,7 +39,7 @@ func main() {
 
 	// New returns an Amazon S3 compatible client object. API compatibility (v2 or v4) is automatically
 	// determined based on the Endpoint value.
-	s3Client, err := minio.New("localhost:9000", "minio", "minio123", true)
+	s3Client, err := minio.New("localhost:9000", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), true)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -56,7 +57,7 @@ func main() {
 	 // GOOD -SMALL
 	// Source object
 
-	src := minio.NewSourceInfo("test", "lsses3", nil)
+	src := minio.NewSourceInfo("fudmod", "small", nil)
 
 	// All following conditions are allowed and can be combined together.
 
@@ -73,7 +74,7 @@ func main() {
 	// src.SetMatchETagExceptCond("31624deb84149d2f8ef9c385918b653a")
 
 	// Destination object
-	dst, err := minio.NewDestinationInfo("test", "lsses32plain", nil, nil)
+	dst, err := minio.NewDestinationInfo("fudmod", "small2", encrypt.NewSSE(), nil)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -84,13 +85,13 @@ func main() {
 		log.Fatalln(err)
 	}
 	log.Println("Copied source object /my-sourcebucketname/my-sourceobjectname to destination /my-bucketname/my-objectname Successfully.")
-	*/
+
 	/* =========> CASE 2 :::::: encrypted obj on server side to encrypted object on server side
 	should see different encryption key; response header; metadata
 	// NOTOK - using encrypted size instead og decrypted size....
 
 	// Source object
-	src := minio.NewSourceInfo("test", "lsses3", nil)
+	src := minio.NewSourceInfo("fudmod", "lsses3", nil)
 
 	// All following conditions are allowed and can be combined together.
 
@@ -107,7 +108,7 @@ func main() {
 	// src.SetMatchETagExceptCond("31624deb84149d2f8ef9c385918b653a")
 
 	// Destination object
-	dst, err := minio.NewDestinationInfo("test", "lsses32sses3", encrypt.NewSSE(), nil)
+	dst, err := minio.NewDestinationInfo("fudmod", "lsses32sses3", encrypt.NewSSE(), nil)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -120,16 +121,84 @@ func main() {
 	log.Println("Copied source object /my-sourcebucketname/my-sourceobjectname to destination /my-bucketname/my-objectname Successfully.")
 	*/
 	/*
-		//=========> CASE 3 :::::: plain object on server side to encrypted object on server side
-		//		 should see  encryption key; response header; metadata
+			//=========> CASE 3 :::::: plain object on server side to encrypted object on server side
+			//		 should see  encryption key; response header; metadata
+
+		// Source object
+		src := minio.NewSourceInfo("fudmod", "lplain", nil)
+
+		// All following conditions are allowed and can be combined together.
+
+		// Set modified condition, copy object modified since 2014 April.
+		//src.SetModifiedSinceCond(time.Date(2014, time.April, 0, 0, 0, 0, 0, time.UTC))
+
+		// Set unmodified condition, copy object unmodified since 2014 April.
+		// src.SetUnmodifiedSinceCond(time.Date(2014, time.April, 0, 0, 0, 0, 0, time.UTC))
+
+		// Set matching ETag condition, copy object which matches the following ETag.
+		// src.SetMatchETagCond("31624deb84149d2f8ef9c385918b653a")
+
+		// Set matching ETag except condition, copy object which does not match the following ETag.
+		// src.SetMatchETagExceptCond("31624deb84149d2f8ef9c385918b653a")
+
+		// Destination object
+		dst, err := minio.NewDestinationInfo("fudmod", "lplain2sses3", encrypt.DefaultPBKDF([]byte("password"), []byte("salt")), nil)
+		if err != nil {
+			log.Fatalln(err)
+		}
+
+		// Initiate copy object.
+		err = s3Client.CopyObject(dst, src)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		log.Println("Copied source object /my-sourcebucketname/my-sourceobjectname to destination /my-bucketname/my-objectname Successfully.")
+
+		/*
+				 =========> CASE 4 :::::: plain object on server side to SSE-C
+					//GOOD
+
+			// Source object
+			src := minio.NewSourceInfo("fudmod", "lplain", nil)
+
+			// All following conditions are allowed and can be combined together.
+
+			// Set modified condition, copy object modified since 2014 April.
+			src.SetModifiedSinceCond(time.Date(2014, time.April, 0, 0, 0, 0, 0, time.UTC))
+
+			// Set unmodified condition, copy object unmodified since 2014 April.
+			// src.SetUnmodifiedSinceCond(time.Date(2014, time.April, 0, 0, 0, 0, 0, time.UTC))
+
+			// Set matching ETag condition, copy object which matches the following ETag.
+			// src.SetMatchETagCond("31624deb84149d2f8ef9c385918b653a")
+
+			// Set matching ETag except condition, copy object which does not match the following ETag.
+			// src.SetMatchETagExceptCond("31624deb84149d2f8ef9c385918b653a")
+
+			dst, err := minio.NewDestinationInfo("fudmod", "lplain2ssec", encrypt.DefaultPBKDF([]byte("password"), []byte("salt")), nil)
+			if err != nil {
+				log.Fatalln(err)
+			}
+
+			// Initiate copy object.
+			err = s3Client.CopyObject(dst, src)
+			if err != nil {
+				log.Fatalln(err)
+			}
+			log.Println("Copied source object /my-sourcebucketname/my-sourceobjectname to destination /my-bucketname/my-objectname Successfully.")
+	*/
+	/*
+		 =========> CASE 5 :::::: SSE-C object on server side to SSE-S3
+			//GOOD
 	*/
 	// Source object
-	src := minio.NewSourceInfo("test", "lplain", nil)
+	bucketname := "fudmod"
+	src := minio.NewSourceInfo("fudmod", "ssec", encrypt.DefaultPBKDF([]byte("correct horse battery staple"), []byte(bucketname+"ssec")))
 
 	// All following conditions are allowed and can be combined together.
 
 	// Set modified condition, copy object modified since 2014 April.
-	//src.SetModifiedSinceCond(time.Date(2014, time.April, 0, 0, 0, 0, 0, time.UTC))
+	src.SetModifiedSinceCond(time.Date(2014, time.April, 0, 0, 0, 0, 0, time.UTC))
 
 	// Set unmodified condition, copy object unmodified since 2014 April.
 	// src.SetUnmodifiedSinceCond(time.Date(2014, time.April, 0, 0, 0, 0, 0, time.UTC))
@@ -140,8 +209,7 @@ func main() {
 	// Set matching ETag except condition, copy object which does not match the following ETag.
 	// src.SetMatchETagExceptCond("31624deb84149d2f8ef9c385918b653a")
 
-	// Destination object
-	dst, err := minio.NewDestinationInfo("test", "lplain2sses3", encrypt.DefaultPBKDF([]byte("password"), []byte("salt")), nil)
+	dst, err := minio.NewDestinationInfo("fudmod", "ssec2sses3", encrypt.NewSSE(), nil)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -154,77 +222,11 @@ func main() {
 	log.Println("Copied source object /my-sourcebucketname/my-sourceobjectname to destination /my-bucketname/my-objectname Successfully.")
 
 	/*
-			 =========> CASE 4 :::::: plain object on server side to SSE-C
-				//GOOD
-
-		// Source object
-		src := minio.NewSourceInfo("test", "lplain", nil)
-
-		// All following conditions are allowed and can be combined together.
-
-		// Set modified condition, copy object modified since 2014 April.
-		src.SetModifiedSinceCond(time.Date(2014, time.April, 0, 0, 0, 0, 0, time.UTC))
-
-		// Set unmodified condition, copy object unmodified since 2014 April.
-		// src.SetUnmodifiedSinceCond(time.Date(2014, time.April, 0, 0, 0, 0, 0, time.UTC))
-
-		// Set matching ETag condition, copy object which matches the following ETag.
-		// src.SetMatchETagCond("31624deb84149d2f8ef9c385918b653a")
-
-		// Set matching ETag except condition, copy object which does not match the following ETag.
-		// src.SetMatchETagExceptCond("31624deb84149d2f8ef9c385918b653a")
-
-		dst, err := minio.NewDestinationInfo("test", "lplain2ssec", encrypt.DefaultPBKDF([]byte("password"), []byte("salt")), nil)
-		if err != nil {
-			log.Fatalln(err)
-		}
-
-		// Initiate copy object.
-		err = s3Client.CopyObject(dst, src)
-		if err != nil {
-			log.Fatalln(err)
-		}
-		log.Println("Copied source object /my-sourcebucketname/my-sourceobjectname to destination /my-bucketname/my-objectname Successfully.")
-	*/
-	/*
-			 =========> CASE 5 :::::: SSE-C object on server side to SSE-S3
-				//GOOD
-
-		// Source object
-		src := minio.NewSourceInfo("test", "lssec", encrypt.DefaultPBKDF([]byte("password"), []byte("salt")))
-
-		// All following conditions are allowed and can be combined together.
-
-		// Set modified condition, copy object modified since 2014 April.
-		src.SetModifiedSinceCond(time.Date(2014, time.April, 0, 0, 0, 0, 0, time.UTC))
-
-		// Set unmodified condition, copy object unmodified since 2014 April.
-		// src.SetUnmodifiedSinceCond(time.Date(2014, time.April, 0, 0, 0, 0, 0, time.UTC))
-
-		// Set matching ETag condition, copy object which matches the following ETag.
-		// src.SetMatchETagCond("31624deb84149d2f8ef9c385918b653a")
-
-		// Set matching ETag except condition, copy object which does not match the following ETag.
-		// src.SetMatchETagExceptCond("31624deb84149d2f8ef9c385918b653a")
-
-		dst, err := minio.NewDestinationInfo("test", "lssec2sses3", encrypt.NewSSE(), nil)
-		if err != nil {
-			log.Fatalln(err)
-		}
-
-		// Initiate copy object.
-		err = s3Client.CopyObject(dst, src)
-		if err != nil {
-			log.Fatalln(err)
-		}
-		log.Println("Copied source object /my-sourcebucketname/my-sourceobjectname to destination /my-bucketname/my-objectname Successfully.")
-	*/
-	/*
 		 =========> CASE 6 :::::: SSE-S3 object on server side to SSE-C
 
 
 		// Source object
-		src := minio.NewSourceInfo("test", "lsses3", nil)
+		src := minio.NewSourceInfo("fudmod", "sses3-s", nil)
 
 		// All following conditions are allowed and can be combined together.
 
@@ -240,7 +242,7 @@ func main() {
 		// Set matching ETag except condition, copy object which does not match the following ETag.
 		// src.SetMatchETagExceptCond("31624deb84149d2f8ef9c385918b653a")
 
-		dst, err := minio.NewDestinationInfo("test", "lsses32ssec", encrypt.DefaultPBKDF([]byte("password"), []byte("salt")), nil)
+		dst, err := minio.NewDestinationInfo("fudmod", "sses32ssec", encrypt.DefaultPBKDF([]byte("password"), []byte("salt")), nil)
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -257,7 +259,7 @@ func main() {
 				// GOOD
 
 		// Source object
-		src := minio.NewSourceInfo("test", "lssec", encrypt.DefaultPBKDF([]byte("password"), []byte("salt")))
+		src := minio.NewSourceInfo("fudmod", "sses3-s", nil) //encrypt.DefaultPBKDF([]byte("password"), []byte("salt")))
 
 		// All following conditions are allowed and can be combined together.
 
@@ -273,7 +275,7 @@ func main() {
 		// Set matching ETag except condition, copy object which does not match the following ETag.
 		// src.SetMatchETagExceptCond("31624deb84149d2f8ef9c385918b653a")
 
-		dst, err := minio.NewDestinationInfo("test", "lssec2plain", nil, nil)
+		dst, err := minio.NewDestinationInfo("fudmod", "sses32plain", nil, nil)
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -291,7 +293,7 @@ func main() {
 			//GOOD
 
 		// Source object
-		src := minio.NewSourceInfo("test", "lplain", nil)
+		src := minio.NewSourceInfo("fudmod", "plain", nil)
 
 		// All following conditions are allowed and can be combined together.
 
@@ -307,7 +309,7 @@ func main() {
 		// Set matching ETag except condition, copy object which does not match the following ETag.
 		// src.SetMatchETagExceptCond("31624deb84149d2f8ef9c385918b653a")
 
-		dst, err := minio.NewDestinationInfo("test", "lplain2plain", nil, nil)
+		dst, err := minio.NewDestinationInfo("fudmod", "plain2plain", nil, nil)
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -323,8 +325,9 @@ func main() {
 	//GOOD
 
 	// Source object
-	src := minio.NewSourceInfo("test", "lssec", encrypt.DefaultPBKDF([]byte("password"), []byte("salt")))
+	bucketname := "fudmod"
 
+	src := minio.NewSourceInfo("fudmod", "ssec", encrypt.DefaultPBKDF([]byte("correct horse battery staple"), []byte(bucketname+"ssec")))
 	// All following conditions are allowed and can be combined together.
 
 	// Set modified condition, copy object modified since 2014 April.
@@ -339,7 +342,7 @@ func main() {
 	// Set matching ETag except condition, copy object which does not match the following ETag.
 	// src.SetMatchETagExceptCond("31624deb84149d2f8ef9c385918b653a")
 
-	dst, err := minio.NewDestinationInfo("test", "lssec2ssec", encrypt.DefaultPBKDF([]byte("peeeassword"), []byte("salt")), nil)
+	dst, err := minio.NewDestinationInfo("fudmod", "ssec2", encrypt.DefaultPBKDF([]byte("correct horse battery staple"), []byte(bucketname+"ssec2")), nil)
 	if err != nil {
 		log.Fatalln(err)
 	}

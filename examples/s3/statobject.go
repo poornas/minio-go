@@ -27,7 +27,6 @@ import (
 	"os"
 
 	"github.com/minio/minio-go"
-	"github.com/minio/minio-go/pkg/encrypt"
 )
 
 func main() {
@@ -39,7 +38,17 @@ func main() {
 
 	// New returns an Amazon S3 compatible client object. API compatibility (v2 or v4) is automatically
 	// determined based on the Endpoint value.
-	s3Client, err := minio.New("localhost:9000", "minio", "minio123", true)
+
+	accessKey := "minio"
+	if a, ok := os.LookupEnv("ACCESS_KEY"); ok {
+		accessKey = a
+	}
+	secretKey := "minio123"
+	if s, ok := os.LookupEnv("SECRET_KEY"); ok {
+		secretKey = s
+	}
+	//s3Client, err := minio.New("localhost:9000", accessKey, secretKey, false)
+	s3Client, err := minio.New("localhost:9000", accessKey, secretKey, true)
 	tr := &http.Transport{
 		TLSClientConfig:    &tls.Config{InsecureSkipVerify: true},
 		DisableCompression: true,
@@ -50,25 +59,41 @@ func main() {
 		log.Fatalln(err)
 	}
 	/*
-		// should fail
-		stat, err := s3Client.StatObject("test", "sses3encrypted-obj2", minio.StatObjectOptions{minio.GetObjectOptions{ServerSideEncryption: encrypt.NewSSE()}})
-		if err != nil {
-			fmt.Println("stat of sse-s3 enc object::", stat, err)
+		password := "correct horse battery staple" // Specify your password. DO NOT USE THIS ONE - USE YOUR OWN.
 
-		}
-		fmt.Println("stat:: ", stat)
+		bucketname := "fudmod"
+		objectName := "sses3-lrg"
+		//m := map[string]string{"X-Amz-Server-Side-Encryption": "AES256"}
+			encryption := encrypt.DefaultPBKDF([]byte(password), []byte(bucketname+objectName))
+
+			// sse-c
+				// should fail
+				stat, err := s3Client.StatObject(bucketname, objectName, minio.StatObjectOptions{minio.GetObjectOptions{ServerSideEncryption: encryption}})
+				if err != nil {
+					fmt.Println("stat of sse-s3 enc object::", stat, err)
+
+				}
+				fmt.Println("stat:: ", stat)
 	*/
-	stat, err := s3Client.StatObject("test", "lssec2ssec", minio.StatObjectOptions{minio.GetObjectOptions{ServerSideEncryption: encrypt.DefaultPBKDF([]byte("peeeassword"), []byte("salt"))}})
-	if err != nil {
-		fmt.Println("stat1 of sse-s3 enc object::", stat, err)
-	}
-	fmt.Println("stat1:: ", stat)
+	//stat, err := s3Client.StatObject("fudmod", "enc1", minio.StatObjectOptions{minio.GetObjectOptions{ServerSideEncryption: encrypt.DefaultPBKDF([]byte("peeeassword"), []byte("salt"))}})
 	/*
-		stat, err = s3Client.StatObject("test", "plain", minio.StatObjectOptions{})
+		//sse - s3
+		stat, err := s3Client.StatObject("fudmod", "sses3-lrg", minio.StatObjectOptions{})
 		if err != nil {
-			fmt.Println("stat2 of unencryted object::", stat, err)
-
+			fmt.Println("stat1 of sse-s3 enc object::", stat, err, stat.Size, stat.Metadata)
 		}
-		log.Println("stat2 ::", stat)
+		fmt.Println("stat1:: ", stat.Size, stat.Metadata)
 	*/
+	bucketname := "fudmod"
+
+	//stat, err := s3Client.StatObject(bucketname, "sses3d2sssec", minio.StatObjectOptions{minio.GetObjectOptions{ServerSideEncryption: encrypt.DefaultPBKDF([]byte("correct horse battery staple"), []byte(bucketname+"sses3d2sssec"))}})
+	stat, err := s3Client.StatObject(bucketname, "osses3", minio.StatObjectOptions{})
+	//stat, err := s3Client.StatObject(bucketname, "plaind2ssecd2s", minio.StatObjectOptions{minio.GetObjectOptions{ServerSideEncryption: encrypt.DefaultPBKDF([]byte("password"), []byte("salt"))}})
+
+	if err != nil {
+		fmt.Println("stat2 of unencryted object::", stat, err)
+
+	}
+	log.Println("stat2 ::", stat)
+
 }

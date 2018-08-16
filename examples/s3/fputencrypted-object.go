@@ -20,7 +20,10 @@
 package main
 
 import (
+	"crypto/tls"
 	"log"
+	"net/http"
+	"os"
 
 	"github.com/minio/minio-go/pkg/encrypt"
 
@@ -36,19 +39,25 @@ func main() {
 
 	// New returns an Amazon S3 compatible client object. API compatibility (v2 or v4) is automatically
 	// determined based on the Endpoint value.
-	s3Client, err := minio.New("s3.amazonaws.com", "YOUR-ACCESSKEYID", "YOUR-SECRETACCESSKEY", true)
+	s3Client, err := minio.New("localhost:9000", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), true)
 	if err != nil {
 		log.Fatalln(err)
 	}
+	tr := &http.Transport{
+		TLSClientConfig:    &tls.Config{InsecureSkipVerify: true},
+		DisableCompression: true,
+	}
+	s3Client.SetCustomTransport(tr)
+	s3Client.TraceOn(os.Stdout)
 
-	filePath := "my-testfile"                  // Specify a local file that we will upload
-	bucketname := "my-bucketname"              // Specify a bucket name - the bucket must already exist
-	objectName := "my-objectname"              // Specify a object name
-	password := "correct horse battery staple" // Specify your password. DO NOT USE THIS ONE - USE YOUR OWN.
+	filePath := "/home/kris/Downloads/smallfile" // Specify a local file that we will upload
+	bucketname := "fudmod"                       // Specify a bucket name - the bucket must already exist
+	objectName := "ssec"                         // Specify a object name
+	password := "correct horse battery staple"   // Specify your password. DO NOT USE THIS ONE - USE YOUR OWN.
 
 	// New SSE-C where the cryptographic key is derived from a password and the objectname + bucketname as salt
 	encryption := encrypt.DefaultPBKDF([]byte(password), []byte(bucketname+objectName))
-
+	encryption = encrypt.DefaultPBKDF([]byte("correct horse battery staple"), []byte(bucketname+"ssec"))
 	// Encrypt file content and upload to the server
 	n, err := s3Client.FPutObject(bucketname, objectName, filePath, minio.PutObjectOptions{ServerSideEncryption: encryption})
 	if err != nil {

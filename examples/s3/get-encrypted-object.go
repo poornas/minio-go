@@ -20,8 +20,10 @@
 package main
 
 import (
+	"crypto/tls"
 	"io"
 	"log"
+	"net/http"
 	"os"
 
 	"github.com/minio/minio-go"
@@ -37,18 +39,23 @@ func main() {
 
 	// New returns an Amazon S3 compatible client object. API compatibility (v2 or v4) is automatically
 	// determined based on the Endpoint value.
-	s3Client, err := minio.New("s3.amazonaws.com", "YOUR-ACCESS-KEY-HERE", "YOUR-SECRET-KEY-HERE", true)
+	s3Client, err := minio.New("localhost:9000", os.Getenv("ACCESS_KEY"), os.Getenv("SECRET_KEY"), true)
 	if err != nil {
 		log.Fatalln(err)
 	}
-
-	bucketname := "my-bucketname"              // Specify a bucket name - the bucket must already exist
-	objectName := "my-objectname"              // Specify a object name - the object must already exist
-	password := "correct horse battery staple" // Specify your password. DO NOT USE THIS ONE - USE YOUR OWN.
+	tr := &http.Transport{
+		TLSClientConfig:    &tls.Config{InsecureSkipVerify: true},
+		DisableCompression: true,
+	}
+	s3Client.SetCustomTransport(tr)
+	s3Client.TraceOn(os.Stdout)
+	//filePath := "/home/kris/Downloads/testfud" // Specify a local file that we will upload
+	bucketname := "fudmod" // Specify a bucket name - the bucket must already exist
+	objectName := "ssec"   // Specify a object name
+	//password := "correct horse battery staple" // Specify your password. DO NOT USE THIS ONE - USE YOUR OWN.
 
 	// New SSE-C where the cryptographic key is derived from a password and the objectname + bucketname as salt
-	encryption := encrypt.DefaultPBKDF([]byte(password), []byte(bucketname+objectName))
-
+	encryption := encrypt.DefaultPBKDF([]byte("correct horse battery staple"), []byte(bucketname+"ssec"))
 	// Get the encrypted object
 	reader, err := s3Client.GetObject(bucketname, objectName, minio.GetObjectOptions{ServerSideEncryption: encryption})
 	if err != nil {

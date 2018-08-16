@@ -168,6 +168,7 @@ func (c Client) putObjectMultipartStreamFromReadAt(ctx context.Context, bucketNa
 				objPart, err = c.uploadPart(ctx, bucketName, objectName, uploadID,
 					sectionReader, uploadReq.PartNum,
 					"", "", partSize, opts.ServerSideEncryption)
+				fmt.Println("err while uploading part?", uploadReq.PartNum, err)
 				if err != nil {
 					uploadedPartsCh <- uploadedPartRes{
 						Size:  0,
@@ -196,6 +197,7 @@ func (c Client) putObjectMultipartStreamFromReadAt(ctx context.Context, bucketNa
 	for u := 1; u <= totalPartsCount; u++ {
 		uploadRes := <-uploadedPartsCh
 		if uploadRes.Error != nil {
+			fmt.Println("err on upload of ", u, " err :", uploadRes.Error)
 			return totalUploadedSize, uploadRes.Error
 		}
 		// Retrieve each uploaded part and store it to be completed.
@@ -222,6 +224,7 @@ func (c Client) putObjectMultipartStreamFromReadAt(ctx context.Context, bucketNa
 	sort.Sort(completedParts(complMultipartUpload.Parts))
 	_, err = c.completeMultipartUpload(ctx, bucketName, objectName, uploadID, complMultipartUpload)
 	if err != nil {
+		fmt.Println("complete multipart upload  err:::", err)
 		return totalUploadedSize, err
 	}
 

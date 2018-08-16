@@ -25,7 +25,7 @@ const absMinPartSize = 1024 * 1024 * 5
 
 // minPartSize - minimum part size 64MiB per object after which
 // putObject behaves internally as multipart.
-const minPartSize = 1024 * 1024 * 64
+const minPartSize = 1024 * 1024 * 5
 
 // maxPartsCount - maximum number of parts for a single multipart session.
 const maxPartsCount = 10000
