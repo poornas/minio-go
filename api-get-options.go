@@ -99,6 +99,7 @@ func (o *GetObjectOptions) SetModified(modTime time.Time) error {
 // SetRange - set the start and end offset of the object to be read.
 // See https://tools.ietf.org/html/rfc7233#section-3.1 for reference.
 func (o *GetObjectOptions) SetRange(start, end int64) error {
+	fmt.Println("setting range....", start, end)
 	switch {
 	case start == 0 && end < 0:
 		// Read last '-end' bytes. `bytes=-N`.

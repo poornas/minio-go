@@ -60,16 +60,22 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	password := "correct horse battery staple" // Specify your password. DO NOT USE THIS ONE - USE YOUR OWN.
-	bucketname := "fudmod"
-	objectName := "osses3"
+	//password := "correct horse battery staple" // Specify your password. DO NOT USE THIS ONE - USE YOUR OWN.
+	bucketname := "tbucket11"
+	objectName := "small.csv"
+
 	//m := map[string]string{"X-Amz-Server-Side-Encryption": "AES256"}
+	password := "correct horse battery staple" // Specify your password. DO NOT USE THIS ONE - USE YOUR OWN.
+
 	encryption := encrypt.DefaultPBKDF([]byte(password), []byte(bucketname+objectName))
 	//encryption := encrypt.DefaultPBKDF([]byte("password"), []byte("salt"))
-	//	encryption := encrypt.NewSSE()
-	if err := s3Client.FGetObject(bucketname, objectName, "/home/kris/Downloads/sses3d2scp.txt", minio.GetObjectOptions{ServerSideEncryption: encryption}); err != nil {
+	//encryption := encrypt.NewSSE()
+	opts := minio.GetObjectOptions{}
+	opts.SetRange(0, 20)
+	opts.ServerSideEncryption = encryption
+	if err := s3Client.FGetObject(bucketname, objectName, "/home/kris/Downloads/acusss.txt", opts); err != nil {
 
-		//if err := s3Client.FGetObject(bucketname, objectName, "/home/kris/Downloads/osses1d2.txt", minio.GetObjectOptions{}); err != nil {
+		// if err := s3Client.FGetObject(bucketname, objectName, "/home/kris/Downloads/osses1d2.txt", opts); err != nil {
 		log.Fatalln(err)
 	}
 	log.Println("Successfully saved my-filename.csv")

@@ -20,25 +20,40 @@
 package main
 
 import (
+	"crypto/tls"
 	"fmt"
 	"log"
+	"net/http"
+	"os"
 
 	"github.com/minio/minio-go"
 )
 
 func main() {
-	// Note: YOUR-ACCESSKEYID, YOUR-SECRETACCESSKEY, my-bucketname and my-prefixname
-	// are dummy values, please replace them with original values.
+	accessKey := "minio"
+	if a, ok := os.LookupEnv("ACCESS_KEY"); ok {
+		accessKey = a
+	}
+	secretKey := "minio123"
+	if s, ok := os.LookupEnv("SECRET_KEY"); ok {
+		secretKey = s
+	}
+	s3Client, err := minio.New("localhost:9000", accessKey, secretKey, false)
 
-	// Requests are always secure (HTTPS) by default. Set secure=false to enable insecure (HTTP) access.
-	// This boolean value is the last argument for New().
-
-	// New returns an Amazon S3 compatible client object. API compatibility (v2 or v4) is automatically
-	// determined based on the Endpoint value.
-	s3Client, err := minio.New("s3.amazonaws.com", "YOUR-ACCESSKEYID", "YOUR-SECRETACCESSKEY", true)
+	tr := &http.Transport{
+		TLSClientConfig:    &tls.Config{InsecureSkipVerify: true},
+		DisableCompression: true,
+	}
+	s3Client.SetCustomTransport(tr)
+	s3Client.TraceOn(os.Stdout)
 	if err != nil {
 		log.Fatalln(err)
 	}
+
+	bucketname := "tbucket11"
+	objectname := "sses22-large"
+	//	sseType := "sse-s3"
+	//encryption := getEncrypt(bucketname, objectname, sseType)
 
 	// Create a done channel to control 'ListObjects' go routine.
 	doneCh := make(chan struct{})
@@ -47,7 +62,7 @@ func main() {
 	defer close(doneCh)
 
 	// List all multipart uploads from a bucket-name with a matching prefix.
-	for multipartObject := range s3Client.ListIncompleteUploads("my-bucketname", "my-prefixname", true, doneCh) {
+	for multipartObject := range s3Client.ListIncompleteUploads(bucketname, objectname, true, doneCh) {
 		if multipartObject.Err != nil {
 			fmt.Println(multipartObject.Err)
 			return

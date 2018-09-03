@@ -75,6 +75,7 @@ func (c Client) fGetObjectWithContext(ctx context.Context, bucketName, objectNam
 
 	// Gather md5sum.
 	objectStat, err := c.StatObject(bucketName, objectName, StatObjectOptions{opts})
+	fmt.Println("TSTAT ERR:", err, objectStat)
 	if err != nil {
 		return err
 	}

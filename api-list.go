@@ -484,7 +484,9 @@ func (c Client) listIncompleteUploads(bucketName, objectPrefix string, recursive
 		var uploadIDMarker string
 		for {
 			// list all multipart uploads.
+			
 			result, err := c.listMultipartUploadsQuery(bucketName, objectMarker, uploadIDMarker, objectPrefix, delimiter, 1000)
+			fmt.Println("RESULT........", result)
 			if err != nil {
 				objectMultipartStatCh <- ObjectMultipartInfo{
 					Err: err,
@@ -496,6 +498,7 @@ func (c Client) listIncompleteUploads(bucketName, objectPrefix string, recursive
 			uploadIDMarker = result.NextUploadIDMarker
 			// Send all multipart uploads.
 			for _, obj := range result.Uploads {
+				fmt.Println("obj......", obj)
 				// Calculate total size of the uploaded parts if 'aggregateSize' is enabled.
 				if aggregateSize {
 					// Get total multipart size.
@@ -611,6 +614,7 @@ func (c Client) listObjectParts(bucketName, objectName, uploadID string) (partsI
 	for {
 		// Get list of uploaded parts a maximum of 1000 per request.
 		listObjPartsResult, err := c.listObjectPartsQuery(bucketName, objectName, uploadID, nextPartNumberMarker, 1000)
+		fmt.Println(listObjPartsResult, err)
 		if err != nil {
 			return nil, err
 		}

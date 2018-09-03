@@ -77,7 +77,7 @@ func (c Client) putObjectMultipartNoStream(ctx context.Context, bucketName, obje
 	if err != nil {
 		return 0, err
 	}
-	fmt.Println("opts initmu...", opts)
+
 	// Initiate a new multipart upload.
 	uploadID, err := c.newUploadID(ctx, bucketName, objectName, opts)
 	if err != nil {

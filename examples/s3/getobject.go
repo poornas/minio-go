@@ -20,28 +20,37 @@
 package main
 
 import (
+	"crypto/tls"
+	"fmt"
 	"io"
 	"log"
+	"net/http"
 	"os"
 
 	"github.com/minio/minio-go"
 )
 
 func main() {
-	// Note: YOUR-ACCESSKEYID, YOUR-SECRETACCESSKEY, my-bucketname, my-objectname and
-	// my-testfile are dummy values, please replace them with original values.
+	accessKey := "minio"
+	if a, ok := os.LookupEnv("ACCESS_KEY"); ok {
+		accessKey = a
+	}
+	secretKey := "minio123"
+	if s, ok := os.LookupEnv("SECRET_KEY"); ok {
+		secretKey = s
+	}
+	s3Client, err := minio.New("localhost:9000", accessKey, secretKey, false)
 
-	// Requests are always secure (HTTPS) by default. Set secure=false to enable insecure (HTTP) access.
-	// This boolean value is the last argument for New().
-
-	// New returns an Amazon S3 compatible client object. API compatibility (v2 or v4) is automatically
-	// determined based on the Endpoint value.
-	s3Client, err := minio.New("s3.amazonaws.com", "YOUR-ACCESS-KEY-HERE", "YOUR-SECRET-KEY-HERE", true)
+	tr := &http.Transport{
+		TLSClientConfig:    &tls.Config{InsecureSkipVerify: true},
+		DisableCompression: true,
+	}
+	s3Client.SetCustomTransport(tr)
+	s3Client.TraceOn(os.Stdout)
 	if err != nil {
 		log.Fatalln(err)
 	}
-
-	reader, err := s3Client.GetObject("my-bucketname", "my-objectname", minio.GetObjectOptions{})
+	reader, err := s3Client.GetObject("ganesa", "6m", minio.GetObjectOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -58,7 +67,8 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	if _, err := io.CopyN(localFile, reader, stat.Size); err != nil {
+	if n, err := io.CopyN(localFile, reader, stat.Size); err != nil {
 		log.Fatalln(err)
+		fmt.Println("n bytes...", n)
 	}
 }

@@ -46,7 +46,8 @@ func main() {
 	if s, ok := os.LookupEnv("SECRET_KEY"); ok {
 		secretKey = s
 	}
-	s3Client, err := minio.New("localhost:9000", accessKey, secretKey, true)
+	s3Client, err := minio.New("localhost:9000", accessKey, secretKey, false)
+	//s3Client, err := minio.New("localhost:9001", accessKey, secretKey, false)
 
 	tr := &http.Transport{
 		TLSClientConfig:    &tls.Config{InsecureSkipVerify: true},
@@ -58,9 +59,11 @@ func main() {
 		log.Fatalln(err)
 	}
 	//small object put
-	object, err := os.Open("/home/kris/Downloads/smallfile")
-	//	object, err := os.Open("/home/kris/Downloads/dump/100-0.txt")
-	//object, err := os.Open("/home/kris/Downloads/dump/large6M.txt")
+	//object, err := os.Open("/home/kris/Downloads/smallfile")
+	object, err := os.Open("/home/kris/Downloads/dump/large12M.txt")
+	//object, err := os.Open("/home/kris/Downloads/dump/largefile")
+	//object, err := os.Open("/home/kris/code/src/github.com/minio/mygoodcsv.csv.gz")
+	//object, err := os.Open("/home/kris/Downloads/test.csv")
 
 	if err != nil {
 		log.Fatalln(err)
@@ -70,20 +73,22 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	password := "correct horse battery staple" // Specify your password. DO NOT USE THIS ONE - USE YOUR OWN.
+	//password := "correct horse battery staple" // Specify your password. DO NOT USE THIS ONE - USE YOUR OWN.
 
-	bucketname := "fudmod"
-	objectName := "osses3"
+	bucketname := "tbucket11"
+	//objectName := "plaincsv.gz"
+	objectName := "original"
+
 	// //m := map[string]string{"X-Amz-Server-Side-Encryption": "AES256"}
-	encryption := encrypt.DefaultPBKDF([]byte(password), []byte(bucketname+objectName))
+	//encryption := encrypt.DefaultPBKDF([]byte(password), []byte(bucketname+objectName))
 	// // sse-c
-	n, err := s3Client.PutObject(bucketname, objectName, object, objectStat.Size(), minio.PutObjectOptions{ContentType: "application/octet-stream", ServerSideEncryption: encryption})
+	//n, err := s3Client.PutObject(bucketname, objectName, object, objectStat.Size(), minio.PutObjectOptions{ContentType: "application/octet-stream", ServerSideEncryption: encrypt.NewSSE)})
 	// sse-s3
-	//n, err := s3Client.PutObject(bucketname, objectName, object, objectStat.Size(), minio.PutObjectOptions{ContentType: "application/octet-stream", ServerSideEncryption: encrypt.NewSSE()})
+	n, err := s3Client.PutObject(bucketname, objectName, object, objectStat.Size(), minio.PutObjectOptions{ContentType: "application/gzip", ServerSideEncryption: encrypt.NewSSE()})
 
-	//n, err := s3Client.PutObject("tt1b", "s3enc-s1mall", object, objectStat.Size(), minio.PutObjectOptions{ContentType: "application/octet-stream", ServerSideEncryption: encrypt.NewSSE()})
+	//n, err := s3Client.PutObject("tt1b", "s3enc-s1mall"b, object, objectStat.Size(), minio.PutObjectOptions{ContentType: "application/octet-stream", ServerSideEncryption: encrypt.NewSSE()})
 
-	//n, err := s3Client.PutObject("test", "sse2s3", object, objectStat.Size(), minio.PutObjectOptions{ContentType: "application/octet-stream", ServerSideEncryption: encrypt.NewSSE()})
+	//n, err := s3Client.PutObject(bucketname, objectName, object, objectStat.Size(), minio.PutObjectOptions{ContentType: "application/octet-stream"})
 
 	if err != nil {
 		log.Fatalln(err)

@@ -20,7 +20,10 @@
 package main
 
 import (
+	"crypto/tls"
 	"log"
+	"net/http"
+	"os"
 
 	"github.com/minio/minio-go"
 )
@@ -34,7 +37,25 @@ func main() {
 
 	// New returns an Amazon S3 compatible client object. API compatibility (v2 or v4) is automatically
 	// determined based on the Endpoint value.
-	s3Client, err := minio.New("s3.amazonaws.com", "YOUR-ACCESSKEYID", "YOUR-SECRETACCESSKEY", true)
+	accessKey := "minio"
+	if a, ok := os.LookupEnv("ACCESS_KEY"); ok {
+		accessKey = a
+	}
+	secretKey := "minio123"
+	if s, ok := os.LookupEnv("SECRET_KEY"); ok {
+		secretKey = s
+	}
+	s3Client, err := minio.New("localhost:9000", accessKey, secretKey, true)
+
+	tr := &http.Transport{
+		TLSClientConfig:    &tls.Config{InsecureSkipVerify: true},
+		DisableCompression: true,
+	}
+	s3Client.SetCustomTransport(tr)
+	//s3Client.TraceOn(os.Stdout)
+	if err != nil {
+		log.Fatalln(err)
+	}
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -51,7 +72,7 @@ func main() {
 		defer close(doneCh)
 
 		// List all objects from a bucket-name with a matching prefix.
-		for object := range s3Client.ListObjects("my-bucketname", "my-prefixname", true, doneCh) {
+		for object := range s3Client.ListObjects("tbucket11", "a/b", true, doneCh) {
 			if object.Err != nil {
 				log.Fatalln(object.Err)
 			}
@@ -60,7 +81,7 @@ func main() {
 	}()
 
 	// Call RemoveObjects API
-	errorCh := s3Client.RemoveObjects("my-bucketname", objectsCh)
+	errorCh := s3Client.RemoveObjects("tbucket11", objectsCh)
 
 	// Print errors received from RemoveObjects API
 	for e := range errorCh {

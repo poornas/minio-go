@@ -118,6 +118,7 @@ func (c Client) getObjectWithContext(ctx context.Context, bucketName, objectName
 						// Only need to run a StatObject until an actual Read or ReadAt request comes through.
 
 						// Remove range header if already set, for stat Operations to get original file size.
+						fmt.Println("deleting rage...1", opts)
 						delete(opts.headers, "Range")
 						objectInfo, err = c.statObject(ctx, bucketName, objectName, StatObjectOptions{opts})
 						if err != nil {
@@ -133,7 +134,9 @@ func (c Client) getObjectWithContext(ctx context.Context, bucketName, objectName
 							objectInfo: objectInfo,
 						}
 					}
-				} else if req.settingObjectInfo { // Request is just to get objectInfo.
+				} else if req.settingObjectInfo {
+					fmt.Println("deleting range...2", opts)
+					// Request is just to get objectInfo.
 					// Remove range header if already set, for stat Operations to get original file size.
 					delete(opts.headers, "Range")
 					if etag != "" {
@@ -166,13 +169,17 @@ func (c Client) getObjectWithContext(ctx context.Context, bucketName, objectName
 							// Close previously opened http reader.
 							httpReader.Close()
 						}
+						fmt.Println("rea.readat...1", req.isReadAt)
 						// If this request is a readAt only get the specified range.
 						if req.isReadAt {
+							fmt.Println("range...", req.Offset)
 							// Range is set with respect to the offset and length of the buffer requested.
 							opts.SetRange(req.Offset, req.Offset+int64(len(req.Buffer))-1)
 						} else if req.Offset > 0 { // Range is set with respect to the offset.
+							fmt.Println("req.Offset...", req.Offset)
 							opts.SetRange(req.Offset, 0)
 						}
+						fmt.Println(opts, "<==== opts")
 						httpReader, objectInfo, err = c.getObject(ctx, bucketName, objectName, opts)
 						if err != nil {
 							resCh <- getResponse{

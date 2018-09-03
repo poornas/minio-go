@@ -282,6 +282,7 @@ func (c Client) copyObjectPartDo(ctx context.Context, srcBucket, srcObject, dest
 
 	for k, v := range metadata {
 		headers.Set(k, v)
+		fmt.Println("COP CLIENT Setting header...", k)
 	}
 
 	queryValues := make(url.Values)

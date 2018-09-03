@@ -19,6 +19,7 @@ package minio
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -114,11 +115,13 @@ func (c Client) statObject(ctx context.Context, bucketName, objectName string, o
 		customHeader:     opts.Header(),
 	})
 	defer closeResponse(resp)
+	fmt.Println("actual api err: ", err)
 	if err != nil {
 		return ObjectInfo{}, err
 	}
 	if resp != nil {
 		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusPartialContent {
+			fmt.Println("#1", resp.StatusCode)
 			return ObjectInfo{}, httpRespToErrorResponse(resp, bucketName, objectName)
 		}
 	}
@@ -133,6 +136,8 @@ func (c Client) statObject(ctx context.Context, bucketName, objectName string, o
 	if contentLengthStr != "" {
 		size, err = strconv.ParseInt(contentLengthStr, 10, 64)
 		if err != nil {
+			fmt.Println("#2")
+
 			// Content-Length is not valid
 			return ObjectInfo{}, ErrorResponse{
 				Code:       "InternalError",
@@ -149,6 +154,8 @@ func (c Client) statObject(ctx context.Context, bucketName, objectName string, o
 	// Parse Last-Modified has http time format.
 	date, err := time.Parse(http.TimeFormat, resp.Header.Get("Last-Modified"))
 	if err != nil {
+		fmt.Println("#3")
+
 		return ObjectInfo{}, ErrorResponse{
 			Code:       "InternalError",
 			Message:    "Last-Modified time format is invalid. " + reportIssue,

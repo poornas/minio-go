@@ -20,7 +20,11 @@
 package main
 
 import (
+	"crypto/tls"
 	"fmt"
+	"log"
+	"net/http"
+	"os"
 
 	"github.com/minio/minio-go"
 )
@@ -34,10 +38,27 @@ func main() {
 
 	// New returns an Amazon S3 compatible client object. API compatibility (v2 or v4) is automatically
 	// determined based on the Endpoint value.
-	s3Client, err := minio.New("s3.amazonaws.com", "YOUR-ACCESSKEYID", "YOUR-SECRETACCESSKEY", true)
+	accessKey := "minio"
+	if a, ok := os.LookupEnv("ACCESS_KEY"); ok {
+		accessKey = a
+	}
+	secretKey := "minio123"
+	if s, ok := os.LookupEnv("SECRET_KEY"); ok {
+		secretKey = s
+	}
+	s3Client, err := minio.New("localhost:9000", accessKey, secretKey, true)
+
+	tr := &http.Transport{
+		TLSClientConfig:    &tls.Config{InsecureSkipVerify: true},
+		DisableCompression: true,
+	}
+	s3Client.SetCustomTransport(tr)
+	//s3Client.TraceOn(os.Stdout)
 	if err != nil {
-		fmt.Println(err)
-		return
+		log.Fatalln(err)
+	}
+	if err != nil {
+		log.Fatalln(err)
 	}
 
 	// List 'N' number of objects from a bucket-name with a matching prefix.
@@ -67,7 +88,7 @@ func main() {
 
 	// List recursively first 100 entries for prefix 'my-prefixname'.
 	recursive := true
-	objsInfo, err := listObjectsN("my-bucketname", "my-prefixname", recursive, 100)
+	objsInfo, err := listObjectsN("tbucket11", "a/b/c", recursive, 100)
 	if err != nil {
 		fmt.Println(err)
 	}
