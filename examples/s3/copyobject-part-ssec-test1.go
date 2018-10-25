@@ -76,25 +76,26 @@ func main() {
 	// Make a buffer with 5MB of data
 	buf := bytes.Repeat([]byte("abcde"), 1024*1024)
 	srcencryption := encrypt.DefaultPBKDF([]byte(password), []byte(bucketName+objectName))
-	/*
-		// Save the data
-		//objectName := randString(60, rand.NewSource(time.Now().UnixNano()), "")
-		objInfo, err := s3Client.PutObject(bucketName, objectName, bytes.NewReader(buf), int64(len(buf)), "", "", map[string]string{
-			"Content-Type": "binary/octet-stream",
-		}, srcencryption)
-		if err != nil {
-			log.Fatal("Error:", err, bucketName, objectName)
-		}
 
-		if objInfo.Size != int64(len(buf)) {
-			log.Fatalf("Error: number of bytes does not match, want %v, got %v\n", len(buf), objInfo.Size)
-		}
-	*/
+	// Save the data
+	//objectName := randString(60, rand.NewSource(time.Now().UnixNano()), "")
+	objInfo, err := s3Client.PutObject(bucketName, objectName, bytes.NewReader(buf), int64(len(buf)), "", "", map[string]string{
+		"Content-Type": "binary/octet-stream",
+	}, srcencryption)
+	if err != nil {
+		log.Fatal("Error:", err, bucketName, objectName)
+	}
+
+	if objInfo.Size != int64(len(buf)) {
+		log.Fatalf("Error: number of bytes does not match, want %v, got %v\n", len(buf), objInfo.Size)
+	}
+
 	//ssec
 	srcInfo, err := s3Client.StatObject(bucketName, objectName, minio.StatObjectOptions{minio.GetObjectOptions{ServerSideEncryption: srcencryption}})
 	if err != nil {
 		fmt.Println("stat1 of sse-s3 enc object::", srcInfo, err, srcInfo.Size, srcInfo.Metadata)
 	}
+	fmt.Println(">===stat1 of sse-s3 enc object::", srcInfo, err, srcInfo.Size, srcInfo.Metadata)
 
 	destBucketName := bucketName
 	destObjectName := objectName + "-dest1"
@@ -124,7 +125,7 @@ func main() {
 	if err != nil {
 		log.Fatal("COP Error:", err, destBucketName, destObjectName)
 	}
-	fmt.Println("copied part,,,,")
+	fmt.Println("copied part,,,,", fstPart.PartNumber)
 	// Second of three parts
 	sndPart, err := s3Client.CopyObjectPart(bucketName, objectName, destBucketName, destObjectName, uploadID, 2, 0, -1, metadata)
 	if err != nil {
@@ -144,13 +145,13 @@ func main() {
 	fmt.Println("completed upload,,,,")
 
 	// Stat the object and check its length matches
-	objInfo, err := s3Client.StatObject(destBucketName, destObjectName, minio.StatObjectOptions{minio.GetObjectOptions{ServerSideEncryption: dstencryption}})
+	objInfo, err = s3Client.StatObject(destBucketName, destObjectName, minio.StatObjectOptions{minio.GetObjectOptions{ServerSideEncryption: dstencryption}})
 	if err != nil {
 		log.Fatal("Error:", err, destBucketName, destObjectName)
 	}
-	fmt.Println("destination object info...", objInfo)
+	fmt.Println("destination object info...", objInfo.Size)
 	if objInfo.Size != (5*1024*1024)*2+1 {
-		log.Fatal("Destination object has incorrect size!")
+		log.Fatal("Destination object has incorrect size!", "expected ", (5*1024*1024)*2+1, " got ", objInfo.Size)
 	}
 
 	// Now we read the data back

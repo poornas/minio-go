@@ -46,7 +46,7 @@ func main() {
 	if s, ok := os.LookupEnv("SECRET_KEY"); ok {
 		secretKey = s
 	}
-	s3Client, err := minio.New("localhost:9000", accessKey, secretKey, false)
+	s3Client, err := minio.New("localhost:9000", accessKey, secretKey, true)
 
 	tr := &http.Transport{
 		TLSClientConfig:    &tls.Config{InsecureSkipVerify: true},
@@ -65,7 +65,7 @@ func main() {
 	defer close(doneCh)
 
 	// List all objects from a bucket-name with a matching prefix.
-	for object := range s3Client.ListObjects("tbucket1a", "a/b/", false, doneCh) {
+	for object := range s3Client.ListObjects("tbucket11", "", false, doneCh) {
 		if object.Err != nil {
 			fmt.Println(object.Err)
 			return

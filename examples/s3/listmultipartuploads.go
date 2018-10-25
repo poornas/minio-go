@@ -38,20 +38,20 @@ func main() {
 	if s, ok := os.LookupEnv("SECRET_KEY"); ok {
 		secretKey = s
 	}
-	s3Client, err := minio.New("localhost:9000", accessKey, secretKey, false)
+	s3Client, err := minio.New("localhost:9000", accessKey, secretKey, true)
 
 	tr := &http.Transport{
 		TLSClientConfig:    &tls.Config{InsecureSkipVerify: true},
 		DisableCompression: true,
 	}
 	s3Client.SetCustomTransport(tr)
-	s3Client.TraceOn(os.Stdout)
+	//	s3Client.TraceOn(os.Stdout)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	bucketname := "ganesa"
-	objectname := "6m"
+	bucketname := "tbucket11"
+	objectname := "lmssec"
 	//sseType := "sse-s3"
 	//encryption := getEncrypt(bucketname, objectname, sseType)
 
@@ -67,7 +67,7 @@ func main() {
 			fmt.Println(multipartObject.Err)
 			return
 		}
-		fmt.Println(multipartObject)
+		fmt.Println(multipartObject.UploadID, ":", multipartObject.Key, " :", multipartObject.Size)
 	}
 	return
 }

@@ -49,7 +49,7 @@ func (c Client) CopyObjectWithProgress(dst DestinationInfo, src SourceInfo, prog
 			return err
 		}
 	}
-
+	fmt.Println("size of src...", size)
 	if src.encryption != nil {
 		encrypt.SSECopy(src.encryption).Marshal(header)
 	}
@@ -57,7 +57,6 @@ func (c Client) CopyObjectWithProgress(dst DestinationInfo, src SourceInfo, prog
 	if dst.encryption != nil {
 		dst.encryption.Marshal(header)
 	}
-	fmt.Println(":dsdsds")
 	for k, v := range dst.getUserMetaHeadersMap(true) {
 		header.Set(k, v)
 	}
@@ -70,6 +69,7 @@ func (c Client) CopyObjectWithProgress(dst DestinationInfo, src SourceInfo, prog
 	if err != nil {
 		return err
 	}
+	fmt.Println("put failed on dest side...", err, resp.StatusCode)
 	defer closeResponse(resp)
 
 	if resp.StatusCode != http.StatusOK {
@@ -78,6 +78,7 @@ func (c Client) CopyObjectWithProgress(dst DestinationInfo, src SourceInfo, prog
 
 	// Update the progress properly after successful copy.
 	if progress != nil {
+		fmt.Println("copying size...", size)
 		io.CopyN(ioutil.Discard, progress, size)
 	}
 

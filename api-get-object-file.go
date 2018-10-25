@@ -106,7 +106,7 @@ func (c Client) fGetObjectWithContext(ctx context.Context, bucketName, objectNam
 	if err != nil {
 		return err
 	}
-	fmt.Println("st size:", st.Size(), " objectStat...", objectStat)
+	fmt.Println("st size:", objectStat.Size, " objectStat...", objectStat)
 	// Write to the part file.
 	if n, err := io.CopyN(filePart, objectReader, objectStat.Size); err != nil {
 		fmt.Println("copy err......", err, " number of bytes writtern:::", n)

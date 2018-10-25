@@ -46,18 +46,19 @@ func main() {
 	}
 	//GOOD
 	testCopyUnencryptedSmallObjects() // Case1: SMALL: PLAIN -> PLAIN
-	testCopyDestSSES3SmallObjects()   // Case2: SMALL: PLAIN -> SSE-S3
+
+	testCopyDestSSES3SmallObjects() // Case2: SMALL: PLAIN -> SSE-S3
 
 	testCopyDestSSECSmallObjects()         // Case3: SMALL: PLAIN -> SSEC
 	testCopySrcDestSSECSmallObjects()      // Case4: SMALL: SSEC -> SSEC
 	testCopySrcSSECDestPlainSmallObjects() // Case 5: Small SSEC-> Plain
 
-	testCopySrcAndDestSSES3SmallObjects() // Case6: SMALL: SSE-S3 -> SSE-S3
-	testCopySrcS3DestPlainSmallObjects()  // Case7 : SMALL: SSE-S3 -> PLAIN
-	testCopySrcSSECDestS3SmallObjects()   // Case 8: Small SSEC-> SSE-S3
-	testCopySrcS3DestSSECSmallObjects()   // Case 9: Small SSE-S3-> SSE-C
+	testCopySrcAndDestSSES3SmallObjects() //bad Case6: SMALL: SSE-S3 -> SSE-S3
+	testCopySrcS3DestPlainSmallObjects()  //good Case7 : SMALL: SSE-S3 -> PLAIN
+	testCopySrcSSECDestS3SmallObjects()   //bad Case 8: Small SSEC-> SSE-S3
+	testCopySrcS3DestSSECSmallObjects()   //bad Case 9: Small SSE-S3-> SSE-C
 
-	//good
+	// // 	//good
 	testCopySrcAndDestSSES3LargeObjects()
 	testCopySrcSSECDestS3LargeObjects()
 	testCopySrcS3DestSSECLargeObjects()
@@ -72,7 +73,7 @@ func main() {
 func setup() {
 	// initialize logging params
 	startTime := time.Now()
-	testName := "GWON:small-SSEC->SSES3" //getFuncName()
+	testName := "small-SSEC->SSES3" //getFuncName()
 	function := "CopyObject(destination, source)"
 	args := map[string]interface{}{}
 
@@ -122,15 +123,19 @@ func setup() {
 	objectName = "small-s3"
 	encryption = encrypt.NewSSE()
 	// // sse-s3
-	if n, err := s3Client.PutObject(bucketname, objectName, object, objectStat.Size(), minio.PutObjectOptions{ContentType: "application/octet-stream", ServerSideEncryption: encryption}); err != nil {
+	n, err := s3Client.PutObject(bucketname, objectName, object, objectStat.Size(), minio.PutObjectOptions{ContentType: "application/octet-stream", ServerSideEncryption: encryption})
+	if err != nil {
 		log.Fatal("upload of ", objectName, " failed... ", n, err)
 
 	}
+	fmt.Println("upload size of small s3=============>", n)
+
 	objectName = "small"
 	// unencrypted
-	if n, err := s3Client.PutObject(bucketname, objectName, object, objectStat.Size(), minio.PutObjectOptions{ContentType: "application/octet-stream"}); err != nil {
+	if n, err = s3Client.PutObject(bucketname, objectName, object, objectStat.Size(), minio.PutObjectOptions{ContentType: "application/octet-stream"}); err != nil {
 		log.Fatal("upload of ", objectName, " failed... ", n, err)
 	}
+	fmt.Println("upload size of small=============>", n)
 
 	objectName = "large-ssec"
 	lobject, err := os.Open("/home/kris/Downloads/dump/100-0.txt")
@@ -156,11 +161,13 @@ func setup() {
 		log.Fatal("upload of ", objectName, " failed... ", n, err)
 
 	}
+
 	objectName = "large"
 	// unencrypted
 	if n, err := s3Client.PutObject(bucketname, objectName, lobject, objectStat.Size(), minio.PutObjectOptions{ContentType: "application/octet-stream"}); err != nil {
 		log.Fatal("upload of ", objectName, " failed... ", n, err)
 	}
+
 }
 func testCopySrcSSECDestS3SmallObjects() {
 	// initialize logging params
@@ -468,13 +475,13 @@ func testCopyDestSSES3SmallObjects() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	log.Println(fmt.Sprintf("%s : Copied %s/%s to %s/%s successfully", testName, srcBucket, srcObject, dstBucket, dstObject))
+	log.Println(fmt.Sprintf("****%s : Copied %s/%s to %s/%s successfully", testName, srcBucket, srcObject, dstBucket, dstObject))
 
 	stat, err := s3Client.StatObject(dstBucket, dstObject, minio.StatObjectOptions{})
 	if err != nil {
 		fmt.Println("stat1 of sse-s3 enc object::", stat, err, stat.Size, stat.Metadata)
 	}
-	fmt.Println("stat1:: ", stat.Size, stat.Metadata)
+	fmt.Println("stat success:: ", stat.Size, stat.Metadata)
 
 	opts := minio.GetObjectOptions{}
 	//	opts.SetRange(0, 20)

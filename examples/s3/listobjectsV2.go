@@ -67,7 +67,7 @@ func main() {
 	defer close(doneCh)
 
 	// List all objects from a bucket-name with a matching prefix.
-	for object := range s3Client.ListObjectsV2("tbucket11", "a/bacus", false, doneCh) {
+	for object := range s3Client.ListObjectsV2("tbucket11", "", false, doneCh) {
 		if object.Err != nil {
 			fmt.Println(object.Err)
 			return

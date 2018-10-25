@@ -30,7 +30,7 @@ const minPartSize = 1024 * 1024 * 5
 // maxPartsCount - maximum number of parts for a single multipart session.
 const maxPartsCount = 10000
 
-// maxPartSize - maximum part size 5GiB for a single multipart upload
+// maxPartSize - maximum part size 5GiB for a 4single multipart upload
 // operation.
 const maxPartSize = 1024 * 1024 * 1024 * 5
 

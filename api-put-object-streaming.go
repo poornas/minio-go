@@ -395,7 +395,7 @@ func (c Client) putObjectDo(ctx context.Context, bucketName, objectName string, 
 		contentMD5Base64: md5Base64,
 		contentSHA256Hex: sha256Hex,
 	}
-
+	fmt.Println("md5sum....", md5Base64)
 	// Execute PUT an objectName.
 	resp, err := c.executeMethod(ctx, "PUT", reqMetadata)
 	defer closeResponse(resp)
@@ -414,7 +414,7 @@ func (c Client) putObjectDo(ctx context.Context, bucketName, objectName string, 
 	objInfo.ETag = strings.TrimSuffix(objInfo.ETag, "\"")
 	// A success here means data was written to server successfully.
 	objInfo.Size = size
-
+	fmt.Println("objectinfo::: ", objInfo)
 	// Return here.
 	return objInfo, nil
 }

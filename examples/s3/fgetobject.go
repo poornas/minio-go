@@ -26,7 +26,6 @@ import (
 	"os"
 
 	"github.com/minio/minio-go"
-	"github.com/minio/minio-go/pkg/encrypt"
 )
 
 func main() {
@@ -62,17 +61,17 @@ func main() {
 	}
 	//password := "correct horse battery staple" // Specify your password. DO NOT USE THIS ONE - USE YOUR OWN.
 	bucketname := "tbucket11"
-	objectName := "small.csv"
+	objectName := "sses22"
 
 	//m := map[string]string{"X-Amz-Server-Side-Encryption": "AES256"}
-	password := "correct horse battery staple" // Specify your password. DO NOT USE THIS ONE - USE YOUR OWN.
+	// password := "correct horse battery staple" // Specify your password. DO NOT USE THIS ONE - USE YOUR OWN.
 
-	encryption := encrypt.DefaultPBKDF([]byte(password), []byte(bucketname+objectName))
-	//encryption := encrypt.DefaultPBKDF([]byte("password"), []byte("salt"))
-	//encryption := encrypt.NewSSE()
+	// encryption := encrypt.DefaultPBKDF([]byte(password), []byte(bucketname+objectName))
+	// //encryption := encrypt.DefaultPBKDF([]byte("password"), []byte("salt"))
+	//	encryption := encrypt.NewSSE()
 	opts := minio.GetObjectOptions{}
-	opts.SetRange(0, 20)
-	opts.ServerSideEncryption = encryption
+	//	opts.SetRange(0, 20)
+	//opts.ServerSideEncryption = encryption
 	if err := s3Client.FGetObject(bucketname, objectName, "/home/kris/Downloads/acusss.txt", opts); err != nil {
 
 		// if err := s3Client.FGetObject(bucketname, objectName, "/home/kris/Downloads/osses1d2.txt", opts); err != nil {

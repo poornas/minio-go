@@ -621,10 +621,12 @@ func (c Client) getObject(ctx context.Context, bucketName, objectName string, op
 		return nil, ObjectInfo{}, err
 	}
 	if resp != nil {
+		fmt.Println("resp.Statuscode", resp.StatusCode)
 		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusPartialContent {
 			return nil, ObjectInfo{}, httpRespToErrorResponse(resp, bucketName, objectName)
 		}
 	}
+	fmt.Println("resp.contentkle", resp.ContentLength)
 
 	// Trim off the odd double quotes from ETag in the beginning and end.
 	md5sum := strings.TrimPrefix(resp.Header.Get("ETag"), "\"")

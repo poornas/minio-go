@@ -25,7 +25,7 @@ func main() {
 	//endPoint := "s3.amazonaws.com"
 	//bucketName := "test"
 	endPoint := "localhost:9000"
-	objectName := "sssec-dbug"
+	objectName := "ssecug"
 	path := "/home/kris/Downloads/dump/large12M.txt"
 
 	s3Client, err := minio.New(endPoint, accessKey, secretKey, true)
@@ -55,6 +55,14 @@ func main() {
 		log.Fatalln(err)
 	}
 	fmt.Println("size", size)
+	/*
+		stat, err := s3Client.StatObject(bucketName, objectName+"/.minio/b05f7f86-ec6a-4073-8b05-8b0747dce13d/3", minio.StatObjectOptions{minio.GetObjectOptions{ServerSideEncryption: encryption}})
+		if err != nil {
+			fmt.Println("stat of sse-s3 enc object::", stat, err)
+
+		}
+		fmt.Println("stat:: ", stat)
+	*/
 
 	reader, err := s3Client.GetObject(bucketName, objectName, minio.GetObjectOptions{ServerSideEncryption: encryption})
 	if err != nil {

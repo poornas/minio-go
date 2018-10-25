@@ -50,7 +50,7 @@ func main() {
 	if s, ok := os.LookupEnv("SECRET_KEY"); ok {
 		secretKey = s
 	}
-	s3Client, err := minio.NewCore("localhost:9000", accessKey, secretKey, false)
+	s3Client, err := minio.NewCore("localhost:9000", accessKey, secretKey, true)
 
 	if err != nil {
 		log.Fatal("Error:", err)
@@ -70,7 +70,7 @@ func main() {
 	}
 	//password := "correct horse battery staple" // Specify your password. DO NOT USE THIS ONE - USE YOUR OWN.
 	bucketName := "tbucket11"
-	objectName := "sses22"
+	objectName := "large-s3"
 	//m := map[string]string{"X-Amz-Server-Side-Encryption": "AES256"}
 	//encryption := encrypt.DefaultPBKDF([]byte(password), []byte(bucketname+objectName))
 	//encryption := encrypt.DefaultPBKDF([]byte("password"), []byte("salt"))
@@ -133,7 +133,7 @@ func main() {
 	}
 	fmt.Println("destination object info...", objInfo)
 	if objInfo.Size != (5*1024*1024)*2+1 {
-		log.Fatal("Destination object has incorrect size!")
+		log.Fatal("Destination object has incorrect size!", objInfo.Size)
 	}
 
 	// Now we read the data back

@@ -160,7 +160,7 @@ func (c Client) putObjectCommon(ctx context.Context, bucketName, objectName stri
 	if size < minPartSize {
 		return c.putObjectNoChecksum(ctx, bucketName, objectName, reader, size, opts)
 	}
-	// For all sizes greater than 64MiB do multipart.
+	// For all sizes greater than 64MiB do multipart.o
 	return c.putObjectMultipartStream(ctx, bucketName, objectName, reader, size, opts)
 }
 

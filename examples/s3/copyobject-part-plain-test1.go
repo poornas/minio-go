@@ -69,7 +69,7 @@ func main() {
 	// TEST#1 :  Create a multipart object in custom backend format. Then copy it over without any additional parts into another using COPY OBJECT PART
 	//password := "correct horse battery staple" // Specify your password. DO NOT USE THIS ONE - USE YOUR OWN.
 	bucketName := "tbucket11"
-	objectName := "plain"
+	objectName := "plain2"
 	// Make a buffer with 5MB of data
 	buf := bytes.Repeat([]byte("abcde"), 1024*1024)
 

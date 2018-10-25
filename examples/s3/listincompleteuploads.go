@@ -38,7 +38,7 @@ func main() {
 	if s, ok := os.LookupEnv("SECRET_KEY"); ok {
 		secretKey = s
 	}
-	s3Client, err := minio.New("localhost:9000", accessKey, secretKey, false)
+	s3Client, err := minio.New("localhost:9000", accessKey, secretKey, true)
 
 	tr := &http.Transport{
 		TLSClientConfig:    &tls.Config{InsecureSkipVerify: true},
@@ -51,7 +51,7 @@ func main() {
 	}
 
 	bucketname := "tbucket11"
-	objectname := "sses22-large"
+	objectname := "lmssec"
 	//	sseType := "sse-s3"
 	//encryption := getEncrypt(bucketname, objectname, sseType)
 

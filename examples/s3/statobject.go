@@ -47,40 +47,38 @@ func main() {
 	if s, ok := os.LookupEnv("SECRET_KEY"); ok {
 		secretKey = s
 	} //s3Client, err := minio.New("localhost:9000", accessKey, secretKey, false)
-	s3Client, err := minio.New("localhost:9000", accessKey, secretKey, false)
+	s3Client, err := minio.New("localhost:9000", accessKey, secretKey, true)
 	tr := &http.Transport{
 		TLSClientConfig:    &tls.Config{InsecureSkipVerify: true},
 		DisableCompression: true,
 	}
 	s3Client.SetCustomTransport(tr)
-	s3Client.TraceOn(os.Stdout)
+	//s3Client.TraceOn(os.Stdout)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	/*
-			bucketname := "tbucket11"
-			objectName := "t1"
-			coreClient := &minio.Core{Client: s3Client}
-			// Iterate over all parts and aggregate the size.
-			partsInfo, err := coreClient.ListObjectParts(bucketname, objectName, "d95d937a-c32a-450f-b9c9-7e8d343c9d63", 1, 10)
-			if err != nil {
-				fmt.Println("errrr..", err)
-
-			}
-			fmt.Println(partsInfo)
-			var size int64
-			for _, partInfo := range partsInfo.ObjectParts {
-				fmt.Println(partInfo)
-				size += partInfo.Size
-			}
-			fmt.Println("total size of aprts..", size)
-		}
-	*/
-	//password := "correct horse battery staple" // Specify your password. DO NOT USE THIS ONE - USE YOUR OWN.
 
 	bucketname := "tbucket11"
-	objectName := "original"
-	// //m := map[string]string{"X-Amz-Server-Side-Encryption": "AES256"}
+	objectName := "lmssec"
+	coreClient := &minio.Core{Client: s3Client}
+	// Iterate over all parts and aggregate the size.
+	partsInfo, err := coreClient.ListObjectParts(bucketname, objectName, "d38c71ca-4e8c-48cd-99a7-7722643ef8ac", 1, 10)
+	if err != nil {
+		fmt.Println("errrr..", err)
+
+	}
+	var size int64
+	for _, partInfo := range partsInfo.ObjectParts {
+		fmt.Println(partInfo.ETag)
+		size += partInfo.Size
+	}
+	fmt.Println("total size of aprts..", size)
+
+	//password := "correct horse battery staple" // Specify your password. DO NOT USE THIS ONE - USE YOUR OWN.
+
+	//	bucketname := "tbucket11"
+	//objectName := "original"
+	//	// //m := map[string]string{"X-Amz-Server-Side-Encryption": "AES256"}
 	//encryption := encrypt.DefaultPBKDF([]byte(password), []byte(bucketname+objectName))
 
 	// sse-c

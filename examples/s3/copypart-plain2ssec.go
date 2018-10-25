@@ -148,7 +148,7 @@ func main() {
 		log.Fatal("Error:", err, destBucketName, destObjectName)
 	}
 	if objInfo.Size != (5*1024*1024)*2+1 {
-		log.Fatal("Destination object has incorrect size!")
+		log.Fatal("Destination object has incorrect size!", "expected ", (5*1024*1024)*2+1, " got ", objInfo.Size)
 	}
 
 	// Now we read the data back
