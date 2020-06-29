@@ -269,6 +269,7 @@ var resourceList = []string{
 	"response-content-language",
 	"response-content-type",
 	"response-expires",
+	"replication",
 	"torrent",
 	"uploadId",
 	"uploads",

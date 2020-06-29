@@ -58,13 +58,13 @@ func main() {
 | [`BucketExists`](#BucketExists)                         | [`StatObject`](#StatObject)                                           | [`StatObject`](#StatObject)                       |                                               | [`GetBucketNotification`](#GetBucketNotification)             | [`TraceOff`](#TraceOff)                               |
 | [`RemoveBucket`](#RemoveBucket)                         | [`RemoveObject`](#RemoveObject)                                       | [`FPutObject`](#FPutObject)                       |                                               | [`RemoveAllBucketNotification`](#RemoveAllBucketNotification) | [`SetS3TransferAccelerate`](#SetS3TransferAccelerate) |
 | [`ListObjects`](#ListObjects)                           | [`RemoveObjects`](#RemoveObjects)                                     | [`FGetObject`](#FGetObject)                       |                                               | [`ListenBucketNotification`](#ListenBucketNotification)       |                                                       |
-| [`ListObjectsV2`](#ListObjectsV2)                       | [`RemoveIncompleteUpload`](#RemoveIncompleteUpload)                   | [`ComposeObject`](#ComposeObjecet)                |                                               | [`SetBucketLifecycle`](#SetBucketLifecycle)                   |                                                       |
+| [`ListObjectsV2`](#ListObjectsV2)                       | [`RemoveIncompleteUpload`](#RemoveIncompleteUpload)                   | [`ComposeObject`](#ComposeObject)                |                                               | [`SetBucketLifecycle`](#SetBucketLifecycle)                   |                                                       |
 | [`ListIncompleteUploads`](#ListIncompleteUploads)       | [`FPutObject`](#FPutObject)                                           | [`NewSourceInfo`](#NewSourceInfo)                 |                                               | [`GetBucketLifecycle`](#GetBucketLifecycle)                   |                                                       |
 | [`SetBucketTagging`](#SetBucketTagging)                 | [`FGetObject`](#FGetObject)                                           | [`NewDestinationInfo`](#NewDestinationInfo)       |                                               | [`SetObjectLockConfig`](#SetObjectLockConfig)                 |                                                       |
 | [`GetBucketTagging`](#GetBucketTagging)                 | [`ComposeObject`](#ComposeObject)                                     |                                                   |                                               | [`GetObjectLockConfig`](#GetObjectLockConfig)                 |                                                       |
 | [`DeleteBucketTagging`](#DeleteBucketTagging)           | [`NewSourceInfo`](#NewSourceInfo)                                     |                                                   |                                               | [`EnableVersioning`](#EnableVersioning)                       |                                                       |
-|                                                         | [`NewDestinationInfo`](#NewDestinationInfo)                           |                                                   |                                               | [`DisableVersioning`](#DisableVersioning)                     |                                                       |
-|                                                         | [`RemoveObjectsWithOptions`](#RemoveObjectsWithOptions)               |                                                   |                                               | [`GetBucketVersioning`](#GetBucketVersioning)                 |                                                       |
+|   [`SetBucketReplication`](#SetBucketReplication)                                                      | [`NewDestinationInfo`](#NewDestinationInfo)                           |                                                   |                                               | [`DisableVersioning`](#DisableVersioning)                     |                                                       |
+|   [`GetBucketReplication`](#GetBucketReplication)                                                         | [`RemoveObjectsWithOptions`](#RemoveObjectsWithOptions)               |                                                   |                                               | [`GetBucketVersioning`](#GetBucketVersioning)                 |                                                       |
 |                                                         | [`RemoveObjectWithOptions`](#RemoveObjectWithOptions)                 |                                                   |                                               | [`SetBucketEncryption`](#SetBucketEncryption)                 |                                                       |
 |                                                         | [`PutObjectRetention`](#PutObjectRetention)                           |                                                   |                                               | [`GetBucketEncryption`](#GetBucketEncryption)                 |                                                       |
 |                                                         | [`GetObjectRetention`](#GetObjectRetention)                           |                                                   |                                               | [`DeleteBucketEncryption`](#DeleteBucketEncryption)           |                                                       |
@@ -2127,6 +2127,98 @@ if err != nil {
     log.Fatalln(err)
 }
 fmt.Printf("%+v\n", versioningConfig)
+```
+
+<a name="SetBucketReplication"></a>
+
+### SetBucketReplication(ctx context.Context, bucketname, replication string) error
+Set replication config on a bucket. Replication target should have been configured
+using `mc admin bucket replication` for the destination bucket in order for this call to succeed.
+
+__Parameters__
+
+|Param   |Type   |Description   |
+|:---|:---| :---|
+|`ctx`  | _context.Context_  | Custom context for timeout/cancellation of the call|
+|`bucketName` | _string_  |Name of the bucket|
+|`replication` | _string_  |Replication configuration to be set |
+
+__Return Values__
+
+|Param   |Type   |Description   |
+|:---|:---| :---|
+|`err` | _error_  |Standard Error   |
+
+__Example__
+
+```go
+replicationCfg := `<ReplicationConfiguration>
+   <Role>string</Role>
+   <Rule>
+      <DeleteMarkerReplication>
+         <Status>Disabled</Status>
+      </DeleteMarkerReplication>
+      <Destination>
+         <Bucket>string</Bucket>
+         <StorageClass>string</StorageClass>
+      </Destination>
+      <Filter>
+         <And>
+            <Prefix>string</Prefix>
+            <Tag>
+               <Key>string</Key>
+               <Value>string</Value>
+            </Tag>
+            ...
+         </And>
+         <Prefix>string</Prefix>
+         <Tag>
+            <Key>string</Key>
+            <Value>string</Value>
+         </Tag>
+      </Filter>
+      <ID>string</ID>
+      <Prefix>string</Prefix>
+      <Priority>integer</Priority>
+      <Status>string</Status>
+   </Rule>
+</ReplicationConfiguration>`
+
+err = minioClient.SetBucketReplication(context.Background(), "my-bucketname", replicationCfg)
+if err != nil {
+    fmt.Println(err)
+    return
+}
+```
+
+<a name="GetBucketReplication"></a>
+
+### GetBucketReplication(ctx context.Context, bucketName string) (replication string, error)
+Get replication config on a bucket.
+
+__Parameters__
+
+
+|Param   |Type   |Description   |
+|:---|:---| :---|
+|`ctx`  | _context.Context_  | Custom context for timeout/cancellation of the call|
+|`bucketName`  | _string_  |Name of the bucket   |
+
+__Return Values__
+
+
+|Param   |Type   |Description   |
+|:---|:---| :---|
+|`replication`  | _string_ |Replication config returned from the server |
+|`err` | _error_  |Standard Error  |
+
+__Example__
+
+```go
+replication, err := minioClient.GetBucketReplication(context.Background(), "my-bucketname")
+if err != nil {
+    log.Fatalln(err)
+}
 ```
 
 ## 7. Client custom settings
